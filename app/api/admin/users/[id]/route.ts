@@ -1,13 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../auth/[...nextauth]/route"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { connectToDatabase } from "@/lib/db"
 import User from "@/lib/models/user"
 import bcrypt from "bcryptjs"
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "admin") {
+  const session = (await getServerSession(authOptions as any)) as any
+  if (!session || session.user?.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
   await connectToDatabase()
@@ -17,8 +17,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "admin") {
+  const session = (await getServerSession(authOptions as any)) as any
+  if (!session || session.user?.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
   await connectToDatabase()
@@ -35,8 +35,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "admin") {
+  const session = (await getServerSession(authOptions as any)) as any
+  if (!session || session.user?.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
   await connectToDatabase()

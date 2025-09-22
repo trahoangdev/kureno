@@ -126,9 +126,7 @@ export default function AdminLayout({
         <Sidebar>
           <SidebarHeader className="flex h-14 items-center border-b px-4">
             <Link href="/admin" className="flex items-center gap-2">
-              <span className="text-xl font-bold bg-gradient-to-r from-teal-500 to-emerald-600 bg-clip-text text-transparent">
-                Kureno
-              </span>
+              <img src="/logo.svg" alt="Kureno" className="h-6 w-6" />
               <span className="font-medium">Admin</span>
             </Link>
           </SidebarHeader>

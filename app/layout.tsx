@@ -39,9 +39,9 @@ export const metadata = {
     creator: "@kureno",
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon-16x16.png",
-    apple: "/apple-touch-icon.png",
+    icon: "./favicon.ico",
+    shortcut: "./favicon-16x16.png",
+    apple: "./apple-touch-icon.png",
   },
   manifest: `${siteConfig.url}/site.webmanifest`,
 }

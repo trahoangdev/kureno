@@ -1,9 +1,12 @@
+"use client"
+
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import Link from "next/link"
 import type { Metadata } from "next"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -11,6 +14,20 @@ export const metadata: Metadata = {
 }
 
 export default function BlogPage() {
+  const [posts, setPosts] = useState<any[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [limit] = useState(6)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await fetch(`/api/blog?limit=${limit}&page=${page}`)
+      const data = await res.json()
+      setPosts(data.posts || [])
+      setTotal(data.pagination?.total || 0)
+    }
+    fetchData()
+  }, [page, limit])
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -74,16 +91,16 @@ export default function BlogPage() {
         <div className="container">
           <h2 className="text-2xl font-bold tracking-tight mb-8">Latest Articles</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {Array.from({ length: 6 }).map((_, index) => (
+            {posts.map((p, index) => (
               <Link
                 key={index}
-                href={`/blog/${index + 2}`}
+                href={`/blog/${p._id}`}
                 className="group block overflow-hidden rounded-lg border bg-background transition-all hover:shadow-md"
               >
                 <div className="relative h-[200px] overflow-hidden">
                   <Image
-                    src={`/placeholder.svg?height=200&width=400`}
-                    alt={`Blog post ${index + 2}`}
+                    src={p.coverImage || "/placeholder.jpg"}
+                    alt={p.title}
                     fill
                     className="object-cover transition-transform group-hover:scale-105"
                   />
@@ -91,23 +108,22 @@ export default function BlogPage() {
                 <div className="p-6">
                   <div className="mb-2">
                     <span className="inline-block px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
-                      Category
+                      {p.tags?.[0] || "General"}
                     </span>
                   </div>
                   <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
-                    Blog Post Title {index + 2}
+                    {p.title}
                   </h3>
                   <p className="text-muted-foreground mb-4 line-clamp-2">
-                    A brief description of the blog post that gives readers an idea of what the article is about without
-                    revealing too much.
+                    {p.excerpt}
                   </p>
                   <div className="flex items-center gap-3">
                     <div className="relative h-8 w-8 rounded-full overflow-hidden">
-                      <Image src={`/placeholder.svg?height=30&width=30`} alt="Author" fill className="object-cover" />
+                      <Image src={"/placeholder-user.jpg"} alt="Author" fill className="object-cover" />
                     </div>
                     <div className="text-sm">
-                      <p className="font-medium">Author Name</p>
-                      <p className="text-muted-foreground">April 1, 2023</p>
+                      <p className="font-medium">{p.author?.name || "Admin"}</p>
+                      <p className="text-muted-foreground">{new Date(p.publishedAt || p.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
                 </div>
@@ -118,21 +134,8 @@ export default function BlogPage() {
           {/* Pagination */}
           <div className="flex justify-center mt-12">
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" disabled>
-                &lt;
-              </Button>
-              <Button variant="default" size="icon">
-                1
-              </Button>
-              <Button variant="outline" size="icon">
-                2
-              </Button>
-              <Button variant="outline" size="icon">
-                3
-              </Button>
-              <Button variant="outline" size="icon">
-                &gt;
-              </Button>
+              <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</Button>
+              <Button variant="outline" size="sm" disabled={page * limit >= total} onClick={() => setPage((p) => p + 1)}>Next</Button>
             </div>
           </div>
         </div>

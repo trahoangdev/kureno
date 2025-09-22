@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
@@ -73,9 +74,8 @@ export default function Navbar() {
     >
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center">
-          <span className="text-2xl font-bold bg-gradient-to-r from-teal-500 to-emerald-600 bg-clip-text text-transparent">
-            Kureno
-          </span>
+          <Image src="/logo.svg" alt="Kureno" width={28} height={28} className="mr-2" />
+          <span className="sr-only">Kureno</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
