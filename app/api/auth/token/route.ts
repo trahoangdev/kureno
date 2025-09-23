@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { sign } from "jsonwebtoken"
 import bcrypt from "bcryptjs"
-import { connectDB } from "@/lib/db"
+import { connectToDatabase } from "@/lib/db"
 import User from "@/lib/models/user"
 
 export async function POST(req: NextRequest) {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 
-    await connectDB()
+    await connectToDatabase()
 
     // Find user and include password for verification
     const user = await User.findOne({ email: email.toLowerCase() }).select("+password")

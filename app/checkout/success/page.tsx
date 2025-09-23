@@ -51,7 +51,7 @@ export default function CheckoutSuccessPage() {
   }, [orderId])
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-24 md:py-32">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-8 md:py-12">
       <div className="mx-auto max-w-md text-center">
         <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
         <h1 className="mt-6 text-3xl font-bold">Order Confirmed!</h1>

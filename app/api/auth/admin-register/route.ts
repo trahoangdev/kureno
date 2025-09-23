@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import bcrypt from "bcryptjs"
-import { connectDB } from "@/lib/db"
+import { connectToDatabase } from "@/lib/db"
 import User from "@/lib/models/user"
 
 export async function POST(req: NextRequest) {
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Connect to database
-    await connectDB()
+    await connectToDatabase()
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() })

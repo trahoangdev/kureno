@@ -9,8 +9,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, User, Mail, Phone, MapPin } from "lucide-react"
+import { Loader2, User, Mail, Phone, MapPin, Camera, Shield, CheckCircle, AlertCircle, Edit3, Save, X } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function AccountProfilePage() {
@@ -31,6 +33,8 @@ export default function AccountProfilePage() {
     },
   })
   const [mounted, setMounted] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [originalData, setOriginalData] = useState(formData)
 
   useEffect(() => {
     setMounted(true)
@@ -38,8 +42,8 @@ export default function AccountProfilePage() {
     if (session?.user) {
       setFormData((prev) => ({
         ...prev,
-        name: session.user.name || prev.name,
-        email: session.user.email || prev.email,
+        name: session.user?.name || prev.name,
+        email: session.user?.email || prev.email,
       }))
 
       // Fetch additional user data
@@ -78,7 +82,7 @@ export default function AccountProfilePage() {
       setFormData((prev) => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof typeof prev],
+          ...(prev[parent as keyof typeof prev] as any),
           [child]: value,
         },
       }))
@@ -110,13 +114,15 @@ export default function AccountProfilePage() {
       }
 
       // Update session
-      await update({
-        ...session,
-        user: {
-          ...session?.user,
-          name: formData.name,
-        },
-      })
+      if (session) {
+        await update({
+          ...session,
+          user: {
+            ...session.user,
+            name: formData.name,
+          },
+        })
+      }
 
       toast({
         title: "Profile updated",
@@ -173,156 +179,312 @@ export default function AccountProfilePage() {
   }
 
   return (
-    <Tabs defaultValue="profile" className="w-full">
-      <TabsList className="mb-6">
-        <TabsTrigger value="profile" className="flex items-center gap-2">
-          <User className="h-4 w-4" />
-          Profile
-        </TabsTrigger>
-        <TabsTrigger value="address" className="flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          Address
-        </TabsTrigger>
-      </TabsList>
+    <div className="space-y-6">
+      {/* Profile Overview */}
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl">Profile Overview</CardTitle>
+              <CardDescription>Manage your personal information and preferences</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Verified
+              </Badge>
+              <Button
+                variant={isEditing ? "outline" : "default"}
+                size="sm"
+                onClick={() => {
+                  if (isEditing) {
+                    setFormData(originalData)
+                  } else {
+                    setOriginalData(formData)
+                  }
+                  setIsEditing(!isEditing)
+                }}
+              >
+                {isEditing ? (
+                  <>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </>
+                ) : (
+                  <>
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Avatar Section */}
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
+                  <AvatarImage src={session?.user?.image || "/placeholder-user.jpg"} />
+                  <AvatarFallback className="text-2xl font-bold bg-gradient-to-br from-teal-500 to-emerald-600 text-white">
+                    {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "U"}
+                  </AvatarFallback>
+                </Avatar>
+                {isEditing && (
+                  <Button
+                    size="sm"
+                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
+                    variant="secondary"
+                  >
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">{formData.name || "User"}</h3>
+                <p className="text-sm text-muted-foreground">{formData.email}</p>
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <Badge variant="outline" className="text-xs">
+                    <Shield className="h-3 w-3 mr-1" />
+                    Secure Account
+                  </Badge>
+                </div>
+              </div>
+            </div>
 
-      <TabsContent value="profile">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-            <CardDescription>Update your personal information</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form id="profile-form" onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="flex items-center gap-2">
-                  <User className="h-4 w-4" /> Name
-                </Label>
-                <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
+            {/* Profile Stats */}
+            <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 rounded-lg bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/20 dark:to-emerald-950/20">
+                <p className="text-2xl font-bold text-teal-600">3</p>
+                <p className="text-xs text-muted-foreground">Total Orders</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" /> Email
-                </Label>
-                <Input id="email" name="email" type="email" value={formData.email} disabled />
-                <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+              <div className="text-center p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+                <p className="text-2xl font-bold text-blue-600">12</p>
+                <p className="text-xs text-muted-foreground">Wishlist Items</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" /> Phone
-                </Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="(123) 456-7890"
-                />
+              <div className="text-center p-4 rounded-lg bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+                <p className="text-2xl font-bold text-purple-600">4.8</p>
+                <p className="text-xs text-muted-foreground">Rating</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="bio">About</Label>
-                <Textarea
-                  id="bio"
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  placeholder="Tell us a little about yourself"
-                  rows={4}
-                />
+              <div className="text-center p-4 rounded-lg bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20">
+                <p className="text-2xl font-bold text-orange-600">2</p>
+                <p className="text-xs text-muted-foreground">Reviews</p>
               </div>
-            </form>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" form="profile-form" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
-      </TabsContent>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <TabsContent value="address">
-        <Card>
-          <CardHeader>
-            <CardTitle>Address Information</CardTitle>
-            <CardDescription>Update your shipping address</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form id="address-form" onSubmit={handleAddressSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="address.street">Street Address</Label>
-                <Input
-                  id="address.street"
-                  name="address.street"
-                  value={formData.address.street}
-                  onChange={handleChange}
-                  required
-                />
+      {/* Profile Information */}
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="profile" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Personal Info
+          </TabsTrigger>
+          <TabsTrigger value="address" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Address
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="profile">
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle>Personal Information</CardTitle>
+              <CardDescription>Update your personal details and preferences</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form id="profile-form" onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="flex items-center gap-2 text-sm font-medium">
+                      <User className="h-4 w-4" /> Full Name
+                    </Label>
+                    <Input 
+                      id="name" 
+                      name="name" 
+                      value={formData.name} 
+                      onChange={handleChange} 
+                      disabled={!isEditing}
+                      className={!isEditing ? "bg-muted" : ""}
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
+                      <Mail className="h-4 w-4" /> Email Address
+                    </Label>
+                    <Input 
+                      id="email" 
+                      name="email" 
+                      type="email" 
+                      value={formData.email} 
+                      disabled 
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Email cannot be changed for security reasons
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
+                    <Phone className="h-4 w-4" /> Phone Number
+                  </Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    className={!isEditing ? "bg-muted" : ""}
+                    placeholder="(123) 456-7890"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="bio" className="text-sm font-medium">About Me</Label>
+                  <Textarea
+                    id="bio"
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    className={!isEditing ? "bg-muted" : ""}
+                    placeholder="Tell us a little about yourself..."
+                    rows={4}
+                  />
+                </div>
+              </form>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <div className="text-sm text-muted-foreground">
+                Last updated: {new Date().toLocaleDateString()}
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="address.city">City</Label>
-                  <Input
-                    id="address.city"
-                    name="address.city"
-                    value={formData.address.city}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address.state">State / Province</Label>
-                  <Input
-                    id="address.state"
-                    name="address.state"
-                    value={formData.address.state}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="address.zipCode">ZIP / Postal Code</Label>
-                  <Input
-                    id="address.zipCode"
-                    name="address.zipCode"
-                    value={formData.address.zipCode}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address.country">Country</Label>
-                  <Input
-                    id="address.country"
-                    name="address.country"
-                    value={formData.address.country}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-            </form>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" form="address-form" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-                </>
-              ) : (
-                "Save Address"
+              {isEditing && (
+                <Button type="submit" form="profile-form" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" /> Save Changes
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
-          </CardFooter>
-        </Card>
-      </TabsContent>
-    </Tabs>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="address">
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle>Shipping Address</CardTitle>
+              <CardDescription>Manage your default shipping address</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form id="address-form" onSubmit={handleAddressSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="address.street" className="text-sm font-medium">Street Address</Label>
+                  <Input
+                    id="address.street"
+                    name="address.street"
+                    value={formData.address.street}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    className={!isEditing ? "bg-muted" : ""}
+                    required
+                    placeholder="123 Main Street"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="address.city" className="text-sm font-medium">City</Label>
+                    <Input
+                      id="address.city"
+                      name="address.city"
+                      value={formData.address.city}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className={!isEditing ? "bg-muted" : ""}
+                      required
+                      placeholder="New York"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address.state" className="text-sm font-medium">State / Province</Label>
+                    <Input
+                      id="address.state"
+                      name="address.state"
+                      value={formData.address.state}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className={!isEditing ? "bg-muted" : ""}
+                      required
+                      placeholder="NY"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="address.zipCode" className="text-sm font-medium">ZIP / Postal Code</Label>
+                    <Input
+                      id="address.zipCode"
+                      name="address.zipCode"
+                      value={formData.address.zipCode}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className={!isEditing ? "bg-muted" : ""}
+                      required
+                      placeholder="10001"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address.country" className="text-sm font-medium">Country</Label>
+                    <Input
+                      id="address.country"
+                      name="address.country"
+                      value={formData.address.country}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className={!isEditing ? "bg-muted" : ""}
+                      required
+                      placeholder="United States"
+                    />
+                  </div>
+                </div>
+              </form>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <div className="text-sm text-muted-foreground">
+                This address will be used for shipping calculations
+              </div>
+              {isEditing && (
+                <Button type="submit" form="address-form" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" /> Save Address
+                    </>
+                  )}
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   )
 }

@@ -180,7 +180,7 @@ export default function CheckoutPage() {
 
   if (!mounted) {
     return (
-      <div className="container py-24 md:py-32 flex justify-center items-center">
+      <div className="container py-8 md:py-12 flex justify-center items-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
@@ -188,7 +188,7 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-4 py-24 md:py-32">
+      <div className="flex min-h-screen flex-col items-center justify-center px-4 py-8 md:py-12">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
           <p className="text-muted-foreground mb-6">Looks like you haven&apos;t added anything to your cart yet.</p>
@@ -201,7 +201,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container py-24 md:py-32">
+    <div className="container py-8 md:py-12">
       <div className="mb-8">
         <Button variant="outline" size="sm" asChild>
           <Link href="/products">

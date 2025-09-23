@@ -9,8 +9,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, AlertTriangle } from "lucide-react"
+import { Loader2, AlertTriangle, Shield, Bell, Mail, Eye, EyeOff, Lock, Key, Trash2, Save, CheckCircle, AlertCircle } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +38,14 @@ export default function AccountSettingsPage() {
   const [preferences, setPreferences] = useState({
     emailNotifications: true,
     marketingEmails: false,
+    pushNotifications: true,
+    smsNotifications: false,
+    weeklyDigest: true,
+  })
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
   })
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,123 +171,296 @@ export default function AccountSettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <Card>
+    <div className="space-y-6">
+      {/* Security Settings */}
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900">
         <CardHeader>
-          <CardTitle>Change Password</CardTitle>
-          <CardDescription>Update your password to keep your account secure</CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-600">
+              <Shield className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">Security Settings</CardTitle>
+              <CardDescription>Manage your account security and password</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <form id="password-form" onSubmit={handlePasswordSubmit} className="space-y-4">
+          <form id="password-form" onSubmit={handlePasswordSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <Input
-                id="currentPassword"
-                name="currentPassword"
-                type="password"
-                value={formData.currentPassword}
-                onChange={handlePasswordChange}
-                required
-              />
+              <Label htmlFor="currentPassword" className="flex items-center gap-2 text-sm font-medium">
+                <Lock className="h-4 w-4" /> Current Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="currentPassword"
+                  name="currentPassword"
+                  type={showPasswords.current ? "text" : "password"}
+                  value={formData.currentPassword}
+                  onChange={handlePasswordChange}
+                  required
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                >
+                  {showPasswords.current ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input
-                id="newPassword"
-                name="newPassword"
-                type="password"
-                value={formData.newPassword}
-                onChange={handlePasswordChange}
-                required
-              />
+              <Label htmlFor="newPassword" className="flex items-center gap-2 text-sm font-medium">
+                <Key className="h-4 w-4" /> New Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  name="newPassword"
+                  type={showPasswords.new ? "text" : "password"}
+                  value={formData.newPassword}
+                  onChange={handlePasswordChange}
+                  required
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                >
+                  {showPasswords.new ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Password must be at least 8 characters long
+              </div>
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handlePasswordChange}
-                required
-              />
+              <Label htmlFor="confirmPassword" className="flex items-center gap-2 text-sm font-medium">
+                <CheckCircle className="h-4 w-4" /> Confirm New Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showPasswords.confirm ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={handlePasswordChange}
+                  required
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                >
+                  {showPasswords.confirm ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex justify-between">
+          <div className="text-sm text-muted-foreground">
+            Last password change: {new Date().toLocaleDateString()}
+          </div>
           <Button type="submit" form="password-form" disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...
               </>
             ) : (
-              "Update Password"
+              <>
+                <Save className="mr-2 h-4 w-4" /> Update Password
+              </>
             )}
           </Button>
         </CardFooter>
       </Card>
 
-      <Card>
+      {/* Notification Preferences */}
+      <Card className="border-0 shadow-lg">
         <CardHeader>
-          <CardTitle>Notification Preferences</CardTitle>
-          <CardDescription>Manage how you receive notifications and updates</CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600">
+              <Bell className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">Notification Preferences</CardTitle>
+              <CardDescription>Manage how you receive notifications and updates</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <form id="preferences-form" onSubmit={handlePreferencesSubmit} className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="emailNotifications">Email Notifications</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive order updates and account notifications via email
-                </p>
+          <form id="preferences-form" onSubmit={handlePreferencesSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <Label htmlFor="emailNotifications" className="text-sm font-medium">Email Notifications</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive order updates and account notifications via email
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="emailNotifications"
+                  checked={preferences.emailNotifications}
+                  onCheckedChange={(checked) => handlePreferenceChange("emailNotifications", checked)}
+                />
               </div>
-              <Switch
-                id="emailNotifications"
-                checked={preferences.emailNotifications}
-                onCheckedChange={(checked) => handlePreferenceChange("emailNotifications", checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="marketingEmails">Marketing Emails</Label>
-                <p className="text-sm text-muted-foreground">Receive promotional offers, product updates, and news</p>
+
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <Bell className="h-5 w-5 text-purple-600" />
+                  <div>
+                    <Label htmlFor="pushNotifications" className="text-sm font-medium">Push Notifications</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive real-time notifications on your device
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="pushNotifications"
+                  checked={preferences.pushNotifications}
+                  onCheckedChange={(checked) => handlePreferenceChange("pushNotifications", checked)}
+                />
               </div>
-              <Switch
-                id="marketingEmails"
-                checked={preferences.marketingEmails}
-                onCheckedChange={(checked) => handlePreferenceChange("marketingEmails", checked)}
-              />
+
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-5 w-5 text-green-600" />
+                  <div>
+                    <Label htmlFor="marketingEmails" className="text-sm font-medium">Marketing Emails</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive promotional offers, product updates, and news
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="marketingEmails"
+                  checked={preferences.marketingEmails}
+                  onCheckedChange={(checked) => handlePreferenceChange("marketingEmails", checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <Bell className="h-5 w-5 text-orange-600" />
+                  <div>
+                    <Label htmlFor="smsNotifications" className="text-sm font-medium">SMS Notifications</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive important updates via text message
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="smsNotifications"
+                  checked={preferences.smsNotifications}
+                  onCheckedChange={(checked) => handlePreferenceChange("smsNotifications", checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-5 w-5 text-teal-600" />
+                  <div>
+                    <Label htmlFor="weeklyDigest" className="text-sm font-medium">Weekly Digest</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive a weekly summary of your account activity
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="weeklyDigest"
+                  checked={preferences.weeklyDigest}
+                  onCheckedChange={(checked) => handlePreferenceChange("weeklyDigest", checked)}
+                />
+              </div>
             </div>
           </form>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex justify-between">
+          <div className="text-sm text-muted-foreground">
+            Preferences are saved automatically
+          </div>
           <Button type="submit" form="preferences-form" disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
               </>
             ) : (
-              "Save Preferences"
+              <>
+                <Save className="mr-2 h-4 w-4" /> Save Preferences
+              </>
             )}
           </Button>
         </CardFooter>
       </Card>
 
-      <Card>
+      {/* Account Management */}
+      <Card className="border-0 shadow-lg border-red-200 dark:border-red-800">
         <CardHeader>
-          <CardTitle>Delete Account</CardTitle>
-          <CardDescription>Permanently delete your account and all associated data</CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-pink-600">
+              <AlertTriangle className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-xl text-red-600">Danger Zone</CardTitle>
+              <CardDescription>Irreversible and destructive actions</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
-            This action is irreversible and will permanently delete your account, order history, and personal
-            information.
-          </p>
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-medium text-red-900 dark:text-red-100">Delete Account</h4>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    This action is irreversible and will permanently delete your account, order history, and personal information.
+                  </p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <Badge variant="destructive" className="text-xs">Permanent</Badge>
+                    <Badge variant="outline" className="text-xs border-red-300 text-red-700 dark:text-red-300">
+                      No Recovery
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </CardContent>
         <CardFooter>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive">Delete Account</Button>
+              <Button variant="destructive" className="w-full md:w-auto">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Account
+              </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -287,7 +470,7 @@ export default function AccountSettingsPage() {
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   This action cannot be undone. This will permanently delete your account and remove your data from our
-                  servers.
+                  servers. All your orders, preferences, and personal information will be lost forever.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -302,7 +485,9 @@ export default function AccountSettingsPage() {
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...
                     </>
                   ) : (
-                    "Delete Account"
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete Account
+                    </>
                   )}
                 </AlertDialogAction>
               </AlertDialogFooter>

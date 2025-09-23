@@ -52,3 +52,6 @@ export async function connectToDatabase() {
 
   return cached.conn
 }
+
+// Export alias for backward compatibility
+export const connectDB = connectToDatabase
