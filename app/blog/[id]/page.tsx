@@ -85,9 +85,9 @@ export default async function BlogDetail({ params }: { params: { id: string } })
               {/* Meta Information */}
               <div className="mb-6 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <div className="relative h-8 w-8 overflow-hidden rounded-full">
-                    <Image src="/placeholder-user.jpg" alt="Author" fill className="object-cover" />
-                  </div>
+          <div className="relative h-8 w-8 overflow-hidden rounded-full">
+            <Image src="/placeholder-user.jpg" alt="Author" fill className="object-cover" />
+          </div>
                   <span className="flex items-center gap-1">
                     <User className="h-4 w-4" />
                     {post.author?.name || "Admin"}
@@ -254,7 +254,7 @@ export default async function BlogDetail({ params }: { params: { id: string } })
                 </CardContent>
               </Card>
             ))}
-          </div>
+        </div>
         </div>
       </div>
     </div>

@@ -140,34 +140,34 @@ export default function Home() {
             <div className="space-y-8">
               <div className="inline-flex items-center gap-2 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 px-4 py-2 rounded-full text-sm font-medium">
                 <Sparkles className="h-4 w-4" />
-                Locally Crafted Excellence
-              </div>
+              Locally Crafted Excellence
+            </div>
               
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-                Discover the Essence of{" "}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+              Discover the Essence of{" "}
                 <span className="bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 bg-clip-text text-transparent">
-                  Kureno
-                </span>
-              </h1>
+                Kureno
+              </span>
+            </h1>
               
               <p className="text-xl text-muted-foreground leading-relaxed max-w-lg">
-                Authentic products that celebrate our local heritage and craftsmanship, designed with passion and purpose. 
+              Authentic products that celebrate our local heritage and craftsmanship, designed with passion and purpose.
                 Every piece tells a story of tradition, quality, and community.
-              </p>
+            </p>
               
-              <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" className="rounded-full" asChild>
                   <Link href="/products">
                     Explore Products
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
-                </Button>
+              </Button>
                 <Button size="lg" variant="outline" className="rounded-full" asChild>
                   <Link href="/about">
                     <Play className="mr-2 h-4 w-4" />
                     Our Story
                   </Link>
-                </Button>
+              </Button>
               </div>
 
               {/* Quick Stats */}
@@ -183,13 +183,13 @@ export default function Home() {
             
             <div className="relative">
               <div className="relative h-[500px] lg:h-[600px] rounded-2xl overflow-hidden shadow-2xl">
-                <Image
+            <Image
                   src="/placeholder.svg?height=600&width=500"
-                  alt="Kureno featured product"
-                  fill
-                  className="object-cover"
-                  priority
-                />
+              alt="Kureno featured product"
+              fill
+              className="object-cover"
+              priority
+            />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
               </div>
               
@@ -273,8 +273,8 @@ export default function Home() {
             {featuredProducts.map((product) => (
               <Card key={product.id} className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
                 <div className="relative">
-                  <div className="relative h-[300px] overflow-hidden">
-                    <Image
+                <div className="relative h-[300px] overflow-hidden">
+                  <Image
                       src={product.image}
                       alt={product.name}
                       fill
@@ -306,7 +306,7 @@ export default function Home() {
                         <Badge variant="outline">{product.badge}</Badge>
                       )}
                     </div>
-                  </div>
+                </div>
 
                   <CardContent className="p-6">
                     <div className="space-y-4">
@@ -315,8 +315,8 @@ export default function Home() {
                           {product.name}
                         </h3>
                         <div className="flex items-center gap-2">
-                          <div className="flex">
-                            {[...Array(5)].map((_, i) => (
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
                               <Star 
                                 key={i} 
                                 className={`h-4 w-4 ${
@@ -355,7 +355,7 @@ export default function Home() {
               </Card>
             ))}
           </div>
-        </div>
+                  </div>
       </section>
 
       {/* Stats Section */}
@@ -395,8 +395,8 @@ export default function Home() {
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 rounded-full bg-teal-100 dark:bg-teal-900/30">
                     <HandHeart className="h-5 w-5 text-teal-600" />
-                  </div>
-                  <div>
+          </div>
+          <div>
                     <div className="font-semibold">Local Artisans</div>
                     <div className="text-sm text-muted-foreground">25+ Partners</div>
                   </div>
@@ -420,14 +420,14 @@ export default function Home() {
               
               <div className="space-y-6">
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  Kureno was born from a passion for authentic local craftsmanship and a desire to share our heritage with
-                  the world. What started as a small workshop has grown into a beloved brand that celebrates our community's
-                  unique identity.
-                </p>
+              Kureno was born from a passion for authentic local craftsmanship and a desire to share our heritage with
+              the world. What started as a small workshop has grown into a beloved brand that celebrates our community's
+              unique identity.
+            </p>
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  Every product we create is infused with our values of quality, sustainability, and cultural pride. We work
-                  closely with local artisans to ensure that each item tells a story and preserves traditional techniques.
-                </p>
+              Every product we create is infused with our values of quality, sustainability, and cultural pride. We work
+              closely with local artisans to ensure that each item tells a story and preserves traditional techniques.
+            </p>
               </div>
 
               <div className="flex items-center gap-4">
@@ -535,7 +535,7 @@ export default function Home() {
                       <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
                       <AvatarFallback>{testimonial.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                     </Avatar>
-                    <div>
+                  <div>
                       <div className="font-semibold">{testimonial.name}</div>
                       <div className="text-sm text-muted-foreground">{testimonial.role}</div>
                     </div>
@@ -558,19 +558,19 @@ export default function Home() {
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Join Our Community</h2>
             <p className="text-lg mb-8 opacity-90">
-              Subscribe to our newsletter for exclusive offers, new product announcements, and stories from our artisans. 
+            Subscribe to our newsletter for exclusive offers, new product announcements, and stories from our artisans.
               Be the first to discover our latest creations.
-            </p>
+          </p>
             <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <Input
-                type="email"
-                placeholder="Enter your email"
+            <Input
+              type="email"
+              placeholder="Enter your email"
                 className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/70 rounded-full"
-              />
+            />
               <Button className="bg-white text-teal-600 hover:bg-white/90 hover:text-teal-700 rounded-full">
                 Subscribe
               </Button>
-            </form>
+          </form>
             <p className="text-sm opacity-75 mt-4">
               Join 5,000+ subscribers. Unsubscribe anytime.
             </p>
