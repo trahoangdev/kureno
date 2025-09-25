@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, memo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -23,7 +23,7 @@ interface Comment {
     _id: string
     name: string
     email: string
-  }
+  } | null
   createdAt: string
   likes: number
   likedBy: string[]
@@ -40,7 +40,6 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState("")
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
-  const [replyContent, setReplyContent] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -64,7 +63,7 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
     fetchComments()
   }, [postId])
 
-  const handleSubmitComment = async () => {
+  const handleSubmitComment = useCallback(async () => {
     if (!session?.user) {
       toast({
         title: "Login Required",
@@ -94,7 +93,7 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
       const data = await res.json()
 
       if (res.ok) {
-        setComments([data.comment, ...comments])
+        setComments(prevComments => [data.comment, ...prevComments])
         setNewComment("")
         toast({
           title: "Comment Posted",
@@ -117,10 +116,10 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
     } finally {
       setIsSubmitting(false)
     }
-  }
+  }, [session, newComment, postId, toast])
 
-  const handleSubmitReply = async (parentId: string) => {
-    if (!session?.user || !replyContent.trim()) return
+  const handleSubmitReply = useCallback(async (parentId: string, content: string) => {
+    if (!session?.user || !content.trim()) return
 
     setIsSubmitting(true)
     try {
@@ -128,20 +127,25 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          content: replyContent,
+          content: content.trim(),
           parentId 
         })
       })
 
       if (res.ok) {
-        // Refresh comments to show the new reply
-        const commentsRes = await fetch(`/api/blog/${postId}/comments`)
-        if (commentsRes.ok) {
-          const data = await commentsRes.json()
-          setComments(data.comments || [])
-        }
+        const data = await res.json()
         
-        setReplyContent("")
+        // Add the new reply to the existing comments structure
+        setComments(prevComments => prevComments.map(comment => {
+          if (comment._id === parentId) {
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), data.comment]
+            }
+          }
+          return comment
+        }))
+        
         setReplyingTo(null)
         toast({
           title: "Reply Posted",
@@ -157,9 +161,9 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
     } finally {
       setIsSubmitting(false)
     }
-  }
+  }, [session, postId, toast])
 
-  const handleLikeComment = async (commentId: string) => {
+  const handleLikeComment = useCallback(async (commentId: string) => {
     if (!session?.user) {
       toast({
         title: "Login Required",
@@ -175,12 +179,34 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
       })
 
       if (res.ok) {
-        // Refresh comments to show updated likes
-        const commentsRes = await fetch(`/api/blog/${postId}/comments`)
-        if (commentsRes.ok) {
-          const data = await commentsRes.json()
-          setComments(data.comments || [])
+        const data = await res.json()
+        
+        // Update the comment's like status in the state without refetching
+        const updateCommentLikes = (comments: Comment[]): Comment[] => {
+          return comments.map(comment => {
+            if (comment._id === commentId) {
+              const userId = (session?.user as any)?.id
+              const newLikedBy = data.liked 
+                ? [...(comment.likedBy || []), userId]
+                : (comment.likedBy || []).filter((id: string) => id !== userId)
+              
+              return {
+                ...comment,
+                likes: data.likes,
+                likedBy: newLikedBy
+              }
+            }
+            if (comment.replies) {
+              return {
+                ...comment,
+                replies: updateCommentLikes(comment.replies)
+              }
+            }
+            return comment
+          })
         }
+
+        setComments(prevComments => updateCommentLikes(prevComments))
       }
     } catch (error) {
       toast({
@@ -189,23 +215,107 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
         variant: "destructive"
       })
     }
-  }
+  }, [session, postId, toast])
 
-  const CommentItem = ({ comment, isReply = false }: { comment: Comment, isReply?: boolean }) => {
-    const userId = session?.user?.id || (session?.user as any)?.id
+  // Stable handlers for CommentItem
+  const handleSetReplyingTo = useCallback((commentId: string | null) => {
+    setReplyingTo(commentId)
+  }, [])
+
+  // Separate ReplyForm component to prevent re-renders
+  const ReplyForm = memo(({ 
+    commentId, 
+    onSubmit, 
+    onCancel,
+    isSubmitting 
+  }: {
+    commentId: string,
+    onSubmit: (content: string) => void,
+    onCancel: () => void,
+    isSubmitting: boolean
+  }) => {
+    const [content, setContent] = useState("")
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+    useEffect(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus()
+      }
+    }, [])
+
+    const handleSubmit = useCallback(() => {
+      if (content.trim()) {
+        onSubmit(content)
+        setContent("")
+      }
+    }, [content, onSubmit])
+
+    const handleCancel = useCallback(() => {
+      setContent("")
+      onCancel()
+    }, [onCancel])
+
+    return (
+      <div className="mt-3 space-y-2">
+        <Textarea
+          ref={textareaRef}
+          placeholder="Write your reply..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="min-h-[60px]"
+        />
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={isSubmitting || !content.trim()}
+          >
+            <Send className="h-3 w-3 mr-1" />
+            Reply
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleCancel}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+    )
+  })
+
+  const CommentItem = memo(({ 
+    comment, 
+    isReply = false, 
+    onLike, 
+    onReply, 
+    replyingTo, 
+    onSetReplyingTo, 
+    isSubmitting 
+  }: { 
+    comment: Comment, 
+    isReply?: boolean,
+    onLike: (commentId: string) => void,
+    onReply: (parentId: string, content: string) => void,
+    replyingTo: string | null,
+    onSetReplyingTo: (commentId: string | null) => void,
+    isSubmitting: boolean
+  }) => {
+    const userId = (session?.user as any)?.id
     const isLiked = userId && comment.likedBy.includes(userId)
     
     return (
       <div className={`${isReply ? 'ml-12' : ''} border-l-2 border-muted pl-4`}>
         <div className="flex items-start gap-3">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${comment.author.name}`} />
-            <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${comment.author?.name || 'Unknown'}`} />
+            <AvatarFallback>{comment.author?.name?.charAt(0) || 'U'}</AvatarFallback>
           </Avatar>
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium text-sm">{comment.author.name}</span>
+              <span className="font-medium text-sm">{comment.author?.name || 'Unknown User'}</span>
               <span className="text-xs text-muted-foreground">
                 {new Date(comment.createdAt).toLocaleDateString()}
               </span>
@@ -217,7 +327,7 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleLikeComment(comment._id)}
+                onClick={() => onLike(comment._id)}
                 className={`h-6 px-2 ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
               >
                 <Heart className={`h-3 w-3 mr-1 ${isLiked ? 'fill-current' : ''}`} />
@@ -228,7 +338,7 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setReplyingTo(replyingTo === comment._id ? null : comment._id)}
+                  onClick={() => onSetReplyingTo(replyingTo === comment._id ? null : comment._id)}
                   className="h-6 px-2 text-muted-foreground"
                 >
                   <Reply className="h-3 w-3 mr-1" />
@@ -239,34 +349,12 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
 
             {/* Reply form */}
             {replyingTo === comment._id && (
-              <div className="mt-3 space-y-2">
-                <Textarea
-                  placeholder="Write your reply..."
-                  value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
-                  className="min-h-[60px]"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleSubmitReply(comment._id)}
-                    disabled={isSubmitting || !replyContent.trim()}
-                  >
-                    <Send className="h-3 w-3 mr-1" />
-                    Reply
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setReplyingTo(null)
-                      setReplyContent("")
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
+              <ReplyForm
+                commentId={comment._id}
+                onSubmit={(content) => onReply(comment._id, content)}
+                onCancel={() => onSetReplyingTo(null)}
+                isSubmitting={isSubmitting}
+              />
             )}
           </div>
         </div>
@@ -275,13 +363,22 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
         {comment.replies && comment.replies.length > 0 && (
           <div className="mt-4 space-y-4">
             {comment.replies.map((reply) => (
-              <CommentItem key={reply._id} comment={reply} isReply={true} />
+              <CommentItem 
+                key={reply._id} 
+                comment={reply} 
+                isReply={true}
+                onLike={onLike}
+                onReply={onReply}
+                replyingTo={replyingTo}
+                onSetReplyingTo={onSetReplyingTo}
+                isSubmitting={isSubmitting}
+              />
             ))}
           </div>
         )}
       </div>
     )
-  }
+  })
 
   return (
     <Card className="mt-12">
@@ -332,7 +429,15 @@ export default function CommentsSystem({ postId }: CommentsSystemProps) {
         ) : comments.length > 0 ? (
           <div className="space-y-6">
             {comments.map((comment) => (
-              <CommentItem key={comment._id} comment={comment} />
+              <CommentItem 
+                key={comment._id} 
+                comment={comment} 
+                onLike={handleLikeComment}
+                onReply={handleSubmitReply}
+                replyingTo={replyingTo}
+                onSetReplyingTo={handleSetReplyingTo}
+                isSubmitting={isSubmitting}
+              />
             ))}
           </div>
         ) : (

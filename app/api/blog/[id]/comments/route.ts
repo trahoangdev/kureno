@@ -29,10 +29,10 @@ export async function GET(
       const commentObj = {
         ...comment,
         _id: comment._id.toString(),
-        author: {
+        author: comment.author ? {
           ...comment.author,
           _id: comment.author._id.toString()
-        },
+        } : null,
         replies: []
       }
       commentMap.set(comment._id.toString(), commentObj)
@@ -101,10 +101,10 @@ export async function POST(
     const commentResponse = {
       ...comment.toObject(),
       _id: comment._id.toString(),
-      author: {
+      author: comment.author ? {
         ...comment.author.toObject(),
         _id: comment.author._id.toString()
-      },
+      } : null,
       replies: []
     }
 
