@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   LogOut,
   MessageSquare,
+  MessageCircle,
   Settings,
   ShoppingBag,
   Users,
@@ -23,7 +24,6 @@ import {
   BookOpen,
   Shield,
   Tags,
-  Search,
   Bell,
   ChevronRight,
   ChevronDown,
@@ -134,6 +134,7 @@ import { Separator } from "@/components/ui/separator"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { useDynamicBadges } from "./dynamic-badges"
 // Removed Sidebar components - using custom implementation
 
 const adminRoutes = [
@@ -156,22 +157,36 @@ const adminRoutes = [
     href: "/admin/products",
     label: "Products",
     icon: ShoppingBag,
-        badge: "12",
+        badge: "0",
         description: "Manage product catalog"
   },
   {
     href: "/admin/categories",
     label: "Categories",
     icon: Tags,
-        badge: "5",
+        badge: "0",
         description: "Product categories"
       },
       {
         href: "/admin/blog",
         label: "Blog Posts",
         icon: FileText,
-        badge: "8",
+        badge: "0",
         description: "Content management"
+      },
+      {
+        href: "/admin/reviews",
+        label: "Reviews",
+        icon: MessageSquare,
+        badge: "0",
+        description: "Customer reviews"
+      },
+      {
+        href: "/admin/comments",
+        label: "Comments",
+        icon: MessageCircle,
+        badge: "0",
+        description: "Blog post comments"
       },
     ]
   },
@@ -182,21 +197,21 @@ const adminRoutes = [
     href: "/admin/orders",
     label: "Orders",
     icon: Box,
-        badge: "24",
+        badge: "0",
         description: "Order processing"
   },
   {
     href: "/admin/customers",
     label: "Customers",
     icon: Users,
-        badge: "156",
+        badge: "0",
         description: "Customer database"
       },
       {
         href: "/admin/messages",
         label: "Messages",
         icon: MessageSquare,
-        badge: "3",
+        badge: "0",
         description: "Customer support"
       },
     ]
@@ -208,7 +223,7 @@ const adminRoutes = [
     href: "/admin/users",
     label: "User Management",
     icon: Shield,
-        badge: null,
+        badge: "0",
         description: "Admin users"
   },
   {
@@ -262,7 +277,6 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
   const [expandedCategories, setExpandedCategories] = useState<string[]>([
     "Overview",
     "Content Management",
@@ -270,6 +284,7 @@ export default function AdminLayout({
     "System Administration",
     "API & Settings"
   ])
+  const { badgeData, isLoading: badgesLoading } = useDynamicBadges()
   const { data: session } = useSession()
 
   const toggleCategory = (category: string) => {
@@ -280,13 +295,30 @@ export default function AdminLayout({
     )
   }
 
-  const filteredRoutes = adminRoutes.map(category => ({
-    ...category,
-    items: category.items.filter(item => 
-      item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  })).filter(category => category.items.length > 0)
+  const filteredRoutes = adminRoutes.map(route => ({
+    ...route,
+    items: route.items.map(item => {
+      if (item.badge === null) return item
+      
+      const routeKey = item.href.split('/').pop()
+      let dynamicBadge = "0"
+      
+      if (routeKey === "products") dynamicBadge = badgesLoading ? "..." : badgeData.products.toString()
+      else if (routeKey === "categories") dynamicBadge = badgesLoading ? "..." : badgeData.categories.toString()
+      else if (routeKey === "blog") dynamicBadge = badgesLoading ? "..." : badgeData.blogPosts.toString()
+      else if (routeKey === "reviews") dynamicBadge = badgesLoading ? "..." : badgeData.reviews.toString()
+      else if (routeKey === "comments") dynamicBadge = badgesLoading ? "..." : badgeData.comments.toString()
+      else if (routeKey === "orders") dynamicBadge = badgesLoading ? "..." : badgeData.orders.toString()
+      else if (routeKey === "customers") dynamicBadge = badgesLoading ? "..." : badgeData.customers.toString()
+      else if (routeKey === "messages") dynamicBadge = badgesLoading ? "..." : badgeData.messages.toString()
+      else if (routeKey === "users") dynamicBadge = badgesLoading ? "..." : badgeData.users.toString()
+      
+      return {
+        ...item,
+        badge: dynamicBadge
+      }
+    })
+  }))
 
   // Render minimal shell on admin login page
   if (pathname === "/admin/login") {
@@ -314,32 +346,9 @@ export default function AdminLayout({
             </div>
           </div>
           
-          {/* Quick Stats */}
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="text-center p-2 rounded-lg bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-white/40 dark:border-slate-700/40 shadow-sm">
-              <div className="text-lg font-bold text-slate-600 dark:text-slate-300">24</div>
-              <div className="text-xs text-muted-foreground">Orders</div>
-            </div>
-            <div className="text-center p-2 rounded-lg bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-white/40 dark:border-slate-700/40 shadow-sm">
-              <div className="text-lg font-bold text-green-600 dark:text-green-400">156</div>
-              <div className="text-xs text-muted-foreground">Users</div>
-            </div>
-          </div>
         </div>
 
         <div className="p-2 flex-1 overflow-y-auto">
-          {/* Search Bar */}
-          <div className="mb-6 px-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search admin..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-white/40 dark:border-slate-700/40 focus:bg-white dark:focus:bg-slate-800 shadow-sm"
-              />
-            </div>
-          </div>
 
           {/* Back to Site Button */}
           <div className="mb-6 px-2">
@@ -541,16 +550,6 @@ export default function AdminLayout({
               </div>
             </div>
 
-            {/* Center Section - Search Bar */}
-            <div className="hidden lg:flex flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search admin panel..."
-                  className="pl-10 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-white/20 dark:border-slate-700/20 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-teal-500/20"
-                />
-              </div>
-            </div>
 
             {/* Right Section */}
             <div className="flex items-center gap-2">
@@ -565,9 +564,9 @@ export default function AdminLayout({
                   <span className="sr-only">Refresh</span>
                 </Button>
                 <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0 rounded-lg bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-800/60 border border-white/20 dark:border-slate-700/20">
-                  <Link href="/admin/settings">
+                <Link href="/admin/settings">
                     <Settings className="h-4 w-4" />
-                    <span className="sr-only">Settings</span>
+                  <span className="sr-only">Settings</span>
                 </Link>
               </Button>
               </div>

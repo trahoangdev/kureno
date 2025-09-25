@@ -42,4 +42,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const session = (await getServerSession(authOptions as any)) as any
+  if (!session || session.user?.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  try {
+    await connectToDatabase()
+    await BlogPost.findByIdAndDelete(params.id)
+    return NextResponse.json({ ok: true })
+  } catch (e) {
+    return NextResponse.json({ error: "Failed" }, { status: 500 })
+  }
+}
+
 

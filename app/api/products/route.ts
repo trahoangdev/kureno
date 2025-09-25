@@ -46,20 +46,54 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = (await getServerSession(authOptions as any)) as any
 
-    if (!session || session.user.role !== "admin") {
+    if (!session || session.user?.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await req.json()
-    const { name, description, price, images, category, stock, featured } = body
+    const { 
+      name, 
+      description, 
+      price, 
+      images, 
+      category, 
+      stock, 
+      featured,
+      // Advanced fields
+      sku,
+      weight,
+      dimensions,
+      seo,
+      variants,
+      tags,
+      status,
+      visibility,
+      inventory
+    } = body
 
     if (!name || !description || !price || !images || !category || stock === undefined) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
     await connectToDatabase()
+
+    // Generate SKU if not provided
+    let finalSku = sku
+    if (!finalSku) {
+      const prefix = category ? category.slice(0, 3).toUpperCase() : "PRD"
+      const random = Math.random().toString(36).substr(2, 6).toUpperCase()
+      finalSku = `${prefix}-${random}`
+    }
+
+    // Check for SKU uniqueness
+    if (finalSku) {
+      const existingProduct = await Product.findOne({ sku: finalSku })
+      if (existingProduct) {
+        return NextResponse.json({ error: "SKU already exists" }, { status: 400 })
+      }
+    }
 
     const product = new Product({
       name,
@@ -69,6 +103,20 @@ export async function POST(req: NextRequest) {
       category,
       stock,
       featured: featured || false,
+      // Advanced fields
+      sku: finalSku,
+      weight: weight || 0,
+      dimensions: dimensions || { length: 0, width: 0, height: 0 },
+      seo: seo || { title: "", description: "", keywords: "" },
+      variants: variants || [],
+      tags: tags || [],
+      status: status || "draft",
+      visibility: visibility || "public",
+      inventory: inventory || {
+        trackQuantity: true,
+        allowBackorder: false,
+        lowStockThreshold: 5
+      }
     })
 
     await product.save()

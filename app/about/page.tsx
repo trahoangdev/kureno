@@ -76,7 +76,7 @@ export default function AboutPage() {
 
   const teamMembers = [
     {
-      name: "Sarah Chen",
+      name: "Tra Hoang Trong",
       role: "Founder & CEO",
       bio: "Passionate about preserving traditional craftsmanship while embracing modern innovation.",
       image: "/placeholder.svg?height=300&width=300",
@@ -87,7 +87,7 @@ export default function AboutPage() {
       }
     },
     {
-      name: "Marcus Rodriguez",
+      name: "Tra Hoang Trong",
       role: "Head of Design",
       bio: "Bringing cultural heritage to life through thoughtful, functional design.",
       image: "/placeholder.svg?height=300&width=300",
@@ -98,7 +98,7 @@ export default function AboutPage() {
       }
     },
     {
-      name: "Elena Kowalski",
+      name: "Tra Hoang Trong",
       role: "Production Manager",
       bio: "Ensuring every product meets our high standards of quality and sustainability.",
       image: "/placeholder.svg?height=300&width=300",
@@ -109,7 +109,7 @@ export default function AboutPage() {
       }
     },
     {
-      name: "David Kim",
+      name: "Tra Hoang Trong",
       role: "Community Relations",
       bio: "Building bridges between our brand and the local artisan community.",
       image: "/placeholder.svg?height=300&width=300",
@@ -430,19 +430,19 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
-                name: "Maria Santos",
+                name: "Tra Hoang Trong",
                 role: "Local Artisan",
                 content: "Working with Kureno has given me the opportunity to share my craft with the world while preserving our cultural traditions.",
                 rating: 5
               },
               {
-                name: "James Wilson",
+                name: "Tra Hoang Trong",
                 role: "Customer",
                 content: "The quality and authenticity of Kureno products is unmatched. Every piece tells a story and brings joy to our home.",
                 rating: 5
               },
               {
-                name: "Dr. Lisa Chen",
+                name: "Tra Hoang Trong",
                 role: "Cultural Preservationist",
                 content: "Kureno's commitment to preserving local craftsmanship while adapting to modern needs is truly inspiring.",
                 rating: 5

@@ -9,6 +9,7 @@ export interface CartItem {
   price: number
   quantity: number
   image: string
+  variants?: Record<string, string>
 }
 
 interface CartContextType {
@@ -50,9 +51,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = (item: CartItem) => {
     setItems((prevItems) => {
-      const existingItem = prevItems.find((i) => i.id === item.id)
+      // Create a unique key that includes variants for comparison
+      const itemKey = item.variants 
+        ? `${item.id}-${JSON.stringify(item.variants)}`
+        : item.id
+      
+      const existingItem = prevItems.find((i) => {
+        const existingKey = i.variants 
+          ? `${i.id}-${JSON.stringify(i.variants)}`
+          : i.id
+        return existingKey === itemKey
+      })
+      
       if (existingItem) {
-        return prevItems.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i))
+        return prevItems.map((i) => {
+          const existingKey = i.variants 
+            ? `${i.id}-${JSON.stringify(i.variants)}`
+            : i.id
+          return existingKey === itemKey 
+            ? { ...i, quantity: i.quantity + item.quantity } 
+            : i
+        })
       } else {
         return [...prevItems, item]
       }

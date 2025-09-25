@@ -60,6 +60,28 @@ interface Product {
   images: string[]
   featured: boolean
   createdAt: string
+  // New fields
+  sku?: string
+  weight?: number
+  dimensions?: {
+    length: number
+    width: number
+    height: number
+  }
+  seo?: {
+    title: string
+    description: string
+    keywords: string
+  }
+  variants?: any[]
+  tags?: string[]
+  status?: "draft" | "published" | "archived"
+  visibility?: "public" | "private" | "hidden"
+  inventory?: {
+    trackQuantity: boolean
+    allowBackorder: boolean
+    lowStockThreshold: number
+  }
 }
 
 export default function ProductsPage() {
@@ -71,25 +93,48 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [categories, setCategories] = useState<{ _id: string; name: string; slug: string }[]>([])
   const [categoryFilter, setCategoryFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [visibilityFilter, setVisibilityFilter] = useState("all")
   const [viewMode, setViewMode] = useState<"table" | "grid">("table")
   const [sortBy, setSortBy] = useState("name")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
+  const [stats, setStats] = useState({
+    total: 0,
+    published: 0,
+    draft: 0,
+    archived: 0,
+    lowStock: 0
+  })
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       const params = new URLSearchParams({ limit: String(limit), page: String(page) })
       if (categoryFilter !== "all") params.set("category", categoryFilter)
+      if (statusFilter !== "all") params.set("status", statusFilter)
+      if (visibilityFilter !== "all") params.set("visibility", visibilityFilter)
       const res = await fetch(`/api/products?${params.toString()}`)
       const data = await res.json()
       setProducts(data.products)
       setTotal(data.pagination.total)
+      
+      // Calculate stats
+      const allProducts = data.products
+      const newStats = {
+        total: allProducts.length,
+        published: allProducts.filter((p: Product) => p.status === "published").length,
+        draft: allProducts.filter((p: Product) => p.status === "draft").length,
+        archived: allProducts.filter((p: Product) => p.status === "archived").length,
+        lowStock: allProducts.filter((p: Product) => p.stock <= (p.inventory?.lowStockThreshold || 5)).length
+      }
+      setStats(newStats)
+      
       setLoading(false)
     }
     fetchData()
-  }, [page, limit, categoryFilter])
+  }, [page, limit, categoryFilter, statusFilter, visibilityFilter])
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -187,15 +232,13 @@ export default function ProductsPage() {
     }
   }
 
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const totalProducts = products.length
-    const lowStock = products.filter(p => p.stock <= 10 && p.stock > 0).length
+  // Calculate additional statistics
+  const additionalStats = useMemo(() => {
     const outOfStock = products.filter(p => p.stock === 0).length
     const featured = products.filter(p => p.featured).length
     const totalValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0)
     
-    return { totalProducts, lowStock, outOfStock, featured, totalValue }
+    return { outOfStock, featured, totalValue }
   }, [products])
 
   return (
@@ -213,7 +256,7 @@ export default function ProductsPage() {
               </Badge>
               <Badge variant="outline" className="text-xs">
                 <Activity className="h-3 w-3 mr-1" />
-                {stats.totalProducts} Products
+                {stats.total} Products
               </Badge>
             </div>
             <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 bg-clip-text text-transparent">
@@ -245,24 +288,24 @@ export default function ProductsPage() {
         {/* Quick Stats Preview */}
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
           <div className="text-center">
-            <div className="text-2xl font-bold text-teal-600">{stats.totalProducts}</div>
+            <div className="text-2xl font-bold text-teal-600">{stats.total}</div>
             <div className="text-xs text-muted-foreground">Total Products</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-emerald-600">{stats.featured}</div>
-            <div className="text-xs text-muted-foreground">Featured</div>
+            <div className="text-2xl font-bold text-emerald-600">{stats.published}</div>
+            <div className="text-xs text-muted-foreground">Published</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">{stats.lowStock}</div>
+            <div className="text-2xl font-bold text-orange-600">{stats.draft}</div>
+            <div className="text-xs text-muted-foreground">Draft</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-600">{stats.lowStock}</div>
             <div className="text-xs text-muted-foreground">Low Stock</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-red-600">{stats.outOfStock}</div>
-            <div className="text-xs text-muted-foreground">Out of Stock</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-cyan-600">${stats.totalValue.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Total Value</div>
+            <div className="text-2xl font-bold text-blue-600">{additionalStats.featured}</div>
+            <div className="text-xs text-muted-foreground">Featured</div>
           </div>
         </div>
       </div>
@@ -343,7 +386,7 @@ export default function ProductsPage() {
 
             {/* Advanced Filters */}
             {showFilters && (
-              <div className="grid gap-4 md:grid-cols-4 p-4 bg-muted/30 rounded-lg">
+              <div className="grid gap-4 md:grid-cols-6 p-4 bg-muted/30 rounded-lg">
                 <div>
                   <label className="text-sm font-medium mb-2 block">Sort By</label>
                   <Select value={sortBy} onValueChange={setSortBy}>
@@ -355,6 +398,7 @@ export default function ProductsPage() {
                       <SelectItem value="price">Price</SelectItem>
                       <SelectItem value="stock">Stock</SelectItem>
                       <SelectItem value="createdAt">Date Created</SelectItem>
+                      <SelectItem value="status">Status</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -367,6 +411,34 @@ export default function ProductsPage() {
                     <SelectContent>
                       <SelectItem value="asc">Ascending</SelectItem>
                       <SelectItem value="desc">Descending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Status</label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="rounded-lg">
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Visibility</label>
+                  <Select value={visibilityFilter} onValueChange={setVisibilityFilter}>
+                    <SelectTrigger className="rounded-lg">
+                      <SelectValue placeholder="All visibility" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All visibility</SelectItem>
+                      <SelectItem value="public">Public</SelectItem>
+                      <SelectItem value="private">Private</SelectItem>
+                      <SelectItem value="hidden">Hidden</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -522,14 +594,27 @@ export default function ProductsPage() {
                         )}
                       </div>
                     </TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/70 transition-colors"
+                      onClick={() => handleSort("status")}
+                    >
+                      <div className="flex items-center gap-2">
+                        Status
+                        {sortBy === "status" && (
+                          sortOrder === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead>Visibility</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Variants</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-12 text-center">
+                      <TableCell colSpan={11} className="py-12 text-center">
                         <div className="flex flex-col items-center gap-4">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
                           <div className="text-muted-foreground">Loading products...</div>
@@ -538,7 +623,7 @@ export default function ProductsPage() {
                     </TableRow>
                   ) : filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-12 text-center">
+                      <TableCell colSpan={11} className="py-12 text-center">
                         <div className="flex flex-col items-center gap-4">
                           <Package className="h-12 w-12 text-muted-foreground" />
                           <div>
@@ -617,15 +702,50 @@ export default function ProductsPage() {
                           <Badge 
                             variant="outline" 
                             className={`text-xs ${
-                              p.stock > 10
+                              p.status === "published"
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200"
-                                : p.stock > 0
+                                : p.status === "draft"
                                 ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200"
-                                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200"
+                                : "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-200"
                             }`}
                           >
-                            {p.stock > 10 ? "In Stock" : p.stock > 0 ? "Low Stock" : "Out of Stock"}
+                            {p.status || "draft"}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${
+                              p.visibility === "public"
+                                ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200"
+                                : p.visibility === "private"
+                                ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200"
+                                : "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-200"
+                            }`}
+                          >
+                            {p.visibility || "public"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs font-mono text-muted-foreground">
+                            {p.sku || "N/A"}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {p.variants && p.variants.length > 0 ? (
+                              <>
+                                <Badge variant="secondary" className="text-xs">
+                                  {p.variants.length} variant{p.variants.length > 1 ? 's' : ''}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  ({p.variants.reduce((acc, v) => acc + v.options.length, 0)} options)
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">No variants</span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">

@@ -10,6 +10,11 @@ export interface IBlogPost extends mongoose.Document {
   tags: string[]
   published: boolean
   publishedAt: Date
+  views: number
+  likes: number
+  bookmarks: number
+  likedBy: mongoose.Types.ObjectId[]
+  bookmarkedBy: mongoose.Types.ObjectId[]
   createdAt: Date
   updatedAt: Date
 }
@@ -59,6 +64,26 @@ const blogPostSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    views: {
+      type: Number,
+      default: 0,
+    },
+    likes: {
+      type: Number,
+      default: 0,
+    },
+    bookmarks: {
+      type: Number,
+      default: 0,
+    },
+    likedBy: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
+    bookmarkedBy: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
   },
   { timestamps: true },
 )

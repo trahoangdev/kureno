@@ -16,7 +16,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
+import ImageUpload from "../image-upload"
+import ProductVariants from "../product-variants"
 import { 
   Loader2, 
   ArrowLeft, 
@@ -148,7 +150,7 @@ export default function NewProductPage() {
       description: "",
       keywords: ""
     },
-    variants: [],
+    variants: [] as any[],
     tags: "",
     status: "draft", // draft, published, archived
     visibility: "public", // public, private, hidden
@@ -160,7 +162,6 @@ export default function NewProductPage() {
   })
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [dragOver, setDragOver] = useState(false)
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -220,52 +221,6 @@ export default function NewProductPage() {
     setHasUnsavedChanges(true)
   }
 
-  const handleImageChange = (index: number, value: string) => {
-    const newImages = [...formData.images]
-    newImages[index] = value
-    setFormData((prev) => ({ ...prev, images: newImages }))
-    setHasUnsavedChanges(true)
-  }
-
-  const addImageField = () => {
-    setFormData((prev) => ({ ...prev, images: [...prev.images, ""] }))
-    setHasUnsavedChanges(true)
-  }
-
-  const removeImageField = (index: number) => {
-    if (formData.images.length > 1) {
-      const newImages = [...formData.images]
-      newImages.splice(index, 1)
-      setFormData((prev) => ({ ...prev, images: newImages }))
-      setHasUnsavedChanges(true)
-    }
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-    
-    const files = Array.from(e.dataTransfer.files)
-    const imageFiles = files.filter(file => file.type.startsWith('image/'))
-    
-    if (imageFiles.length > 0) {
-      // In a real app, you would upload these files to a server
-      toast({
-        title: "Files detected",
-        description: `${imageFiles.length} image file(s) detected. Please upload them manually for now.`,
-      })
-    }
-  }
 
   // Auto-save functionality
   useEffect(() => {
@@ -522,7 +477,7 @@ export default function NewProductPage() {
         {/* Main Form */}
         <div className="lg:col-span-2 space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="basic" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 Basic Info
@@ -530,6 +485,10 @@ export default function NewProductPage() {
               <TabsTrigger value="media" className="flex items-center gap-2">
                 <ImageIcon className="h-4 w-4" />
                 Media
+              </TabsTrigger>
+              <TabsTrigger value="variants" className="flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                Variants
               </TabsTrigger>
               <TabsTrigger value="advanced" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
@@ -672,73 +631,37 @@ export default function NewProductPage() {
                   </CardTitle>
                   <CardDescription>Upload and manage product images. Drag and drop supported.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Drag & Drop Area */}
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                      dragOver
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-                        : "border-gray-300 dark:border-gray-700"
-                    }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                  >
-                    <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Upload Product Images</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Drag and drop images here, or click to browse
-                    </p>
-                    <Button variant="outline" className="mb-2">
-                      <Upload className="mr-2 h-4 w-4" />
-                      Choose Files
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      Supports: JPG, PNG, WebP (Max 10MB each)
-                    </p>
-                  </div>
-
-                  {/* Image URLs */}
-                  <div className="space-y-4">
-                    <Label className="text-base font-medium">Image URLs</Label>
-                    {formData.images.map((image, index) => (
-                      <div key={index} className="grid gap-4 md:grid-cols-[120px_1fr_auto] items-start">
-                        <div className="overflow-hidden rounded-lg border bg-white dark:bg-slate-800">
-                          <Image 
-                            src={image || "/placeholder.png"} 
-                            alt={`Preview ${index + 1}`} 
-                            width={120} 
-                            height={90} 
-                            className="h-24 w-full object-cover" 
-                          />
-                        </div>
-                        <div className="space-y-2">
-                  <Input
-                    value={image}
-                    onChange={(e) => handleImageChange(index, e.target.value)}
-                    placeholder="Enter image URL"
-                            className="bg-white/50 dark:bg-slate-800/50"
-                    required={index === 0}
+                <CardContent>
+                  <ImageUpload
+                    images={formData.images}
+                    onImagesChange={(images) => {
+                      setFormData(prev => ({ ...prev, images }))
+                      setHasUnsavedChanges(true)
+                    }}
+                    maxImages={10}
                   />
-                          <p className="text-xs text-muted-foreground">
-                            {index === 0 ? "Main product image (required)" : "Additional product image"}
-                          </p>
-                        </div>
-                  <div className="flex gap-2">
-                    {index === formData.images.length - 1 && (
-                            <Button type="button" variant="outline" size="sm" onClick={addImageField}>
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                    )}
-                    {index > 0 && (
-                            <Button type="button" variant="outline" size="sm" onClick={() => removeImageField(index)}>
-                              <Minus className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Variants Tab */}
+            <TabsContent value="variants" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Palette className="h-5 w-5" />
+                    Product Variants
+                  </CardTitle>
+                  <CardDescription>Create different variations of your product (colors, sizes, materials, etc.)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ProductVariants
+                    variants={formData.variants}
+                    onVariantsChange={(variants) => {
+                      setFormData(prev => ({ ...prev, variants }))
+                      setHasUnsavedChanges(true)
+                    }}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>

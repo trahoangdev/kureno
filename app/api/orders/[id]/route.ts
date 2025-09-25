@@ -6,7 +6,7 @@ import { authOptions } from "../../auth/[...nextauth]/route"
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = (await getServerSession(authOptions as any)) as any
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     // Check if the user is authorized to view this order
-    if (session.user.role !== "admin" && order.user.toString() !== session.user.id) {
+    if (session.user?.role !== "admin" && order.user.toString() !== session.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
@@ -34,9 +34,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = (await getServerSession(authOptions as any)) as any
 
-    if (!session || session.user.role !== "admin") {
+    if (!session || session.user?.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -65,5 +65,30 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   } catch (error) {
     console.error("Error updating order:", error)
     return NextResponse.json({ error: "Failed to update order" }, { status: 500 })
+  }
+}
+
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = (await getServerSession(authOptions as any)) as any
+
+    if (!session || session.user?.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    await connectToDatabase()
+
+    const order = await Order.findById(params.id)
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 })
+    }
+
+    await Order.findByIdAndDelete(params.id)
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error("Error deleting order:", error)
+    return NextResponse.json({ error: "Failed to delete order" }, { status: 500 })
   }
 }

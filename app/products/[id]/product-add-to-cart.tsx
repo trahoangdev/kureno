@@ -7,7 +7,21 @@ import { useCart } from "@/context/cart-context"
 import { ShoppingCart, Plus, Minus, Check } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-export default function AddToCart({ id, name, price, image }: { id: string; name: string; price: number; image: string }) {
+export default function AddToCart({ 
+  id, 
+  name, 
+  price, 
+  image, 
+  variants = {},
+  totalPrice 
+}: { 
+  id: string; 
+  name: string; 
+  price: number; 
+  image: string;
+  variants?: Record<string, string>;
+  totalPrice?: number;
+}) {
   const { addItem } = useCart()
   const { toast } = useToast()
   const [quantity, setQuantity] = useState(1)
@@ -17,11 +31,23 @@ export default function AddToCart({ id, name, price, image }: { id: string; name
   const handleAddToCart = async () => {
     setIsAdding(true)
     try {
-      addItem({ id, name, price, image, quantity })
+      const finalPrice = totalPrice || price
+      const itemName = Object.keys(variants).length > 0 
+        ? `${name} (${Object.values(variants).join(', ')})`
+        : name
+      
+      addItem({ 
+        id, 
+        name: itemName, 
+        price: finalPrice, 
+        image, 
+        quantity,
+        variants: Object.keys(variants).length > 0 ? variants : undefined
+      })
       setAdded(true)
       toast({
         title: "Success",
-        description: `${name} added to cart!`,
+        description: `${itemName} added to cart!`,
       })
       
       // Reset after 2 seconds
@@ -105,7 +131,19 @@ export default function AddToCart({ id, name, price, image }: { id: string; name
 
       {/* Price Summary */}
       <div className="text-center text-sm text-muted-foreground">
-        Total: <span className="font-semibold text-foreground">${(Number(price) * quantity).toFixed(2)}</span>
+        Total: <span className="font-semibold text-foreground">
+          ${((totalPrice || Number(price)) * quantity).toFixed(2)}
+        </span>
+        {totalPrice && totalPrice !== Number(price) && (
+          <div className="text-xs mt-1">
+            <span className="line-through text-muted-foreground">
+              ${(Number(price) * quantity).toFixed(2)}
+            </span>
+            <span className="text-green-600 ml-1">
+              Save ${((Number(price) - totalPrice) * quantity).toFixed(2)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )

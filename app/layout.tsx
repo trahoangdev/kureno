@@ -7,6 +7,7 @@ import AppShell from "@/components/app-shell"
 import { CartProvider } from "@/context/cart-context"
 import { SessionProvider } from "@/components/session-provider"
 import "./globals.css"
+import "highlight.js/styles/github-dark.css"
 
 const inter = Inter({ subsets: ["latin"] })
 

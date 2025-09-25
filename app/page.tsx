@@ -32,59 +32,169 @@ import {
   BookOpen,
   PenTool
 } from "lucide-react"
+import { connectToDatabase } from "@/lib/db"
+import Product from "@/lib/models/product"
+import BlogPost from "@/lib/models/blog-post"
+import Category from "@/lib/models/category"
+import User from "@/lib/models/user"
+import Order from "@/lib/models/order"
 
-export default function Home() {
-  const featuredProducts = [
-    {
-      id: 1,
-      name: "Artisan Ceramic Bowl Set",
-      price: 89.99,
-      originalPrice: 120.00,
-      rating: 4.8,
-      reviews: 124,
-      image: "/placeholder.svg?height=300&width=400",
-      badge: "Best Seller",
-      isNew: false,
-      discount: 25
-    },
-    {
-      id: 2,
-      name: "Handwoven Textile Collection",
-      price: 149.99,
-      originalPrice: null,
-      rating: 4.9,
-      reviews: 89,
-      image: "/placeholder.svg?height=300&width=400",
-      badge: "New",
-      isNew: true,
-      discount: null
-    },
-    {
-      id: 3,
-      name: "Traditional Wooden Carving",
-      price: 199.99,
-      originalPrice: 250.00,
-      rating: 4.7,
-      reviews: 67,
-      image: "/placeholder.svg?height=300&width=400",
-      badge: "Limited",
-      isNew: false,
-      discount: 20
+// Fetch real data functions
+async function getFeaturedProducts() {
+  try {
+    await connectToDatabase()
+    const products = await Product.find({ 
+      featured: true,
+      status: 'published',
+      visibility: 'public'
+    })
+    .sort({ createdAt: -1 })
+    .limit(6)
+    .lean()
+    
+    return products.map((product: any) => ({
+      ...product,
+      _id: product._id.toString()
+    }))
+  } catch (error) {
+    console.error('Error fetching featured products:', error)
+    return []
+  }
+}
+
+async function getCategories() {
+  try {
+    await connectToDatabase()
+    const categories = await Category.find({}).lean()
+    
+    // Get product count for each category
+    const categoriesWithCount = await Promise.all(
+      categories.map(async (category: any) => {
+        const count = await Product.countDocuments({ 
+          category: category.name,
+          status: 'published',
+          visibility: 'public'
+        })
+        return {
+          ...category,
+          _id: category._id.toString(),
+          count
+        }
+      })
+    )
+    
+    return categoriesWithCount
+  } catch (error) {
+    console.error('Error fetching categories:', error)
+    return []
+  }
+}
+
+async function getLatestBlogPosts() {
+  try {
+    await connectToDatabase()
+    const posts = await BlogPost.find({ published: true })
+      .populate('author', 'name')
+      .sort({ publishedAt: -1, createdAt: -1 })
+      .limit(3)
+      .lean()
+    
+    return posts.map((post: any) => ({
+      ...post,
+      _id: post._id.toString(),
+      author: post.author ? {
+        ...post.author,
+        _id: post.author._id.toString()
+      } : null
+    }))
+  } catch (error) {
+    console.error('Error fetching blog posts:', error)
+    return []
+  }
+}
+
+async function getHomeStats() {
+  try {
+    await connectToDatabase()
+    
+    const [
+      totalCustomers,
+      totalProducts,
+      totalOrders,
+      totalCategories
+    ] = await Promise.all([
+      User.countDocuments({ role: { $ne: 'admin' } }),
+      Product.countDocuments({ status: 'published', visibility: 'public' }),
+      Order.countDocuments({}),
+      Category.countDocuments({})
+    ])
+    
+    return {
+      customers: totalCustomers,
+      products: totalProducts,
+      orders: totalOrders,
+      categories: totalCategories
     }
-  ]
+  } catch (error) {
+    console.error('Error fetching stats:', error)
+    return {
+      customers: 0,
+      products: 0,
+      orders: 0,
+      categories: 0
+    }
+  }
+}
 
-  const categories = [
-    { name: "Ceramics", icon: Award, count: 45, color: "from-teal-500 to-emerald-500" },
-    { name: "Textiles", icon: Heart, count: 32, color: "from-emerald-500 to-cyan-500" },
-    { name: "Woodwork", icon: Shield, count: 28, color: "from-cyan-500 to-teal-500" },
-    { name: "Jewelry", icon: Sparkles, count: 19, color: "from-teal-600 to-emerald-600" }
-  ]
+// Helper functions for category mapping
+function getIconForCategory(categoryName: string) {
+  const iconMap: { [key: string]: any } = {
+    'Electronics & Technology': Zap,
+    'Sports & Health': Heart,
+    'Home & Garden': Shield,
+    'Fashion & Accessories': Sparkles,
+    'Books & Education': BookOpen,
+    'Art & Crafts': PenTool,
+    'default': Award
+  }
+  return iconMap[categoryName] || iconMap.default
+}
 
-  const stats = [
-    { label: "Happy Customers", value: "10K+", icon: Users },
-    { label: "Products Created", value: "500+", icon: Award },
-    { label: "Local Artisans", value: "25+", icon: HandHeart },
-    { label: "Years of Excellence", value: "9+", icon: Calendar }
+function getColorForCategory(categoryName: string) {
+  const colorMap: { [key: string]: string } = {
+    'Electronics & Technology': 'from-teal-500 to-emerald-500',
+    'Sports & Health': 'from-emerald-500 to-cyan-500',
+    'Home & Garden': 'from-cyan-500 to-teal-500',
+    'Fashion & Accessories': 'from-teal-600 to-emerald-600',
+    'Books & Education': 'from-emerald-600 to-cyan-600',
+    'Art & Crafts': 'from-cyan-600 to-teal-600',
+    'default': 'from-teal-500 to-emerald-500'
+  }
+  return colorMap[categoryName] || colorMap.default
+}
+
+export default async function Home() {
+  // Fetch all data in parallel
+  const [featuredProducts, categories, blogPosts, stats] = await Promise.all([
+    getFeaturedProducts(),
+    getCategories(),
+    getLatestBlogPosts(),
+    getHomeStats()
+  ])
+
+  // Map categories to include icons and colors
+  const categoriesWithIcons = categories.map((category: any) => ({
+    ...category,
+    icon: getIconForCategory(category.name),
+    color: getColorForCategory(category.name)
+  }))
+
+  // Map stats to display format
+  const statsDisplay = [
+    { label: "Happy Customers", value: `${stats.customers}+`, icon: Users },
+    { label: "Products Available", value: `${stats.products}+`, icon: Award },
+    { label: "Orders Completed", value: `${stats.orders}+`, icon: CheckCircle },
+    { label: "Categories", value: `${stats.categories}+`, icon: Calendar }
   ]
 
   const testimonials = [
@@ -108,23 +218,6 @@ export default function Home() {
       content: "The attention to detail in every Kureno product is incredible. I love knowing that I'm supporting local artisans while bringing beautiful, meaningful pieces into my home.",
       rating: 5,
       avatar: "/placeholder-user.jpg"
-    }
-  ]
-
-  const blogPosts = [
-    {
-      title: "The Art of Traditional Ceramics",
-      excerpt: "Discover the ancient techniques passed down through generations of local artisans.",
-      image: "/placeholder.svg?height=200&width=300",
-      date: "2024-01-15",
-      readTime: "5 min read"
-    },
-    {
-      title: "Sustainable Crafting Practices",
-      excerpt: "How we're preserving the environment while creating beautiful products.",
-      image: "/placeholder.svg?height=200&width=300",
-      date: "2024-01-10",
-      readTime: "3 min read"
     }
   ]
 
@@ -172,7 +265,7 @@ export default function Home() {
 
               {/* Quick Stats */}
               <div className="grid grid-cols-2 gap-6 pt-8">
-                {stats.slice(0, 2).map((stat, index) => (
+                {statsDisplay.slice(0, 2).map((stat, index) => (
                   <div key={index} className="text-center">
                     <div className="text-2xl font-bold text-teal-600 mb-1">{stat.value}</div>
                     <div className="text-sm text-muted-foreground">{stat.label}</div>
@@ -233,19 +326,25 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {categories.map((category, index) => (
-              <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r ${category.color} text-white mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                    <category.icon className="h-8 w-8" />
-                  </div>
-                  <h3 className="font-semibold mb-2 group-hover:text-teal-600 transition-colors">
-                    {category.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{category.count} items</p>
-                </CardContent>
-              </Card>
-            ))}
+            {categoriesWithIcons.length > 0 ? categoriesWithIcons.map((category, index) => (
+              <Link key={category._id} href={`/products?category=${encodeURIComponent(category.name)}`}>
+                <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer">
+                  <CardContent className="p-6 text-center">
+                    <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r ${category.color} text-white mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                      <category.icon className="h-8 w-8" />
+                    </div>
+                    <h3 className="font-semibold mb-2 group-hover:text-teal-600 transition-colors">
+                      {category.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{category.count} items</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            )) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No categories available.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -270,12 +369,12 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProducts.map((product) => (
-              <Card key={product.id} className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
+            {featuredProducts.length > 0 ? featuredProducts.slice(0, 6).map((product: any) => (
+              <Card key={product._id} className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
                 <div className="relative">
                 <div className="relative h-[300px] overflow-hidden">
                   <Image
-                      src={product.image}
+                      src={product.images?.[0] || "/placeholder.png"}
                       alt={product.name}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-110"
@@ -288,22 +387,31 @@ export default function Home() {
                         <Heart className="h-4 w-4" />
                       </Button>
                       <Button size="sm" variant="secondary" className="h-8 w-8 p-0 rounded-full shadow-lg" asChild>
-                        <Link href={`/products/${product.id}`}>
+                        <Link href={`/products/${product._id}`}>
                           <Eye className="h-4 w-4" />
                         </Link>
                       </Button>
                     </div>
 
                     {/* Badges */}
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-3 left-3 flex flex-col gap-2">
+                      {product.featured && (
+                        <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                          <Award className="h-3 w-3 mr-1" />
+                          Featured
+                        </Badge>
+                      )}
                       {product.isNew && (
-                        <Badge className="bg-teal-500 hover:bg-teal-600">{product.badge}</Badge>
+                        <Badge className="bg-teal-500 hover:bg-teal-600 text-white">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          New
+                        </Badge>
                       )}
                       {product.discount && (
-                        <Badge variant="destructive">-{product.discount}%</Badge>
-                      )}
-                      {!product.isNew && !product.discount && (
-                        <Badge variant="outline">{product.badge}</Badge>
+                        <Badge variant="destructive">
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          -{product.discount}%
+                        </Badge>
                       )}
                     </div>
                 </div>
@@ -314,55 +422,60 @@ export default function Home() {
                         <h3 className="font-semibold text-lg mb-2 group-hover:text-teal-600 transition-colors">
                           {product.name}
                         </h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                          {product.description}
+                        </p>
                         <div className="flex items-center gap-2">
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => (
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
                               <Star 
                                 key={i} 
                                 className={`h-4 w-4 ${
-                                  i < Math.floor(product.rating) 
+                                  i < 4 // Default rating since we don't have review data yet
                                     ? 'fill-yellow-400 text-yellow-400' 
                                     : 'text-gray-300'
                                 }`} 
                               />
                             ))}
                           </div>
-                          <span className="text-sm text-muted-foreground">
-                            {product.rating} ({product.reviews} reviews)
-                          </span>
+                          <span className="text-sm text-muted-foreground">(4.0)</span>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl font-bold text-teal-600">
-                            ${product.price}
-                          </span>
-                          {product.originalPrice && (
-                            <span className="text-sm text-muted-foreground line-through">
-                              ${product.originalPrice}
-                            </span>
-                          )}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-teal-600">${product.price}</span>
+                            {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
+                              <span className="text-sm text-muted-foreground line-through">${product.originalPrice}</span>
+                            )}
+                          </div>
                         </div>
-                        <Button size="sm" className="rounded-full">
-                          <ShoppingCart className="h-4 w-4 mr-1" />
-                          Add
+                        <Button size="sm" className="rounded-full" asChild>
+                          <Link href={`/products/${product._id}`}>
+                            <ShoppingCart className="h-4 w-4 mr-2" />
+                            View
+                          </Link>
                         </Button>
                       </div>
                     </div>
                   </CardContent>
                 </div>
               </Card>
-            ))}
+            )) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No featured products available.</p>
+              </div>
+            )}
           </div>
-                  </div>
+        </div>
       </section>
 
       {/* Stats Section */}
       <section className="py-16 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/20 dark:to-emerald-950/20">
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
+            {statsDisplay.map((stat, index) => (
               <div key={index} className="text-center group">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 text-white mb-4 group-hover:scale-110 transition-transform duration-300">
                   <stat.icon className="h-8 w-8" />
@@ -467,39 +580,45 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {blogPosts.map((post, index) => (
-              <Card key={index} className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
-                <div className="relative h-[200px] overflow-hidden">
-                  <Image
-                    src={post.image}
-                    alt={post.title}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-110"
-                  />
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(post.date).toLocaleDateString()}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {post.readTime}
-                    </div>
+            {blogPosts.length > 0 ? blogPosts.map((post: any) => (
+              <Link key={post._id} href={`/blog/${post._id}`}>
+                <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+                  <div className="relative h-[200px] overflow-hidden">
+                    <Image
+                      src={post.featuredImage || "/placeholder.png"}
+                      alt={post.title}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
                   </div>
-                  <h3 className="text-xl font-semibold mb-3 group-hover:text-teal-600 transition-colors">
-                    {post.title}
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    {post.excerpt}
-                  </p>
-                  <Button variant="ghost" className="p-0 h-auto text-teal-600 hover:text-teal-700">
-                    Read More <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(post.publishedAt || post.createdAt).toLocaleDateString()}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {Math.ceil((post.content?.length || 1000) / 1000)} min read
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-3 group-hover:text-teal-600 transition-colors">
+                      {post.title}
+                    </h3>
+                    <p className="text-muted-foreground mb-4 line-clamp-2">
+                      {post.excerpt}
+                    </p>
+                    <Button variant="ghost" className="p-0 h-auto text-teal-600 hover:text-teal-700">
+                      Read More <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            )) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No blog posts available.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>

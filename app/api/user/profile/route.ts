@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = (await getServerSession(authOptions as any)) as any
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     await connectToDatabase()
 
-    const user = await User.findById(session.user.id)
+    const user = await User.findById(session.user?.id)
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = (await getServerSession(authOptions as any)) as any
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -54,7 +54,7 @@ export async function PUT(req: NextRequest) {
 
     await connectToDatabase()
 
-    const user = await User.findById(session.user.id)
+    const user = await User.findById(session.user?.id)
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })

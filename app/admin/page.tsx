@@ -132,14 +132,14 @@ export default function AdminDashboard() {
               Export
             </Button>
             <Button asChild className="rounded-full">
-              <Link href="/admin/orders/new">
+            <Link href="/admin/orders/new">
                 <Plus className="mr-2 h-4 w-4" />
-                New Order
-              </Link>
-            </Button>
-          </div>
+              New Order
+            </Link>
+          </Button>
         </div>
-        
+      </div>
+
         {/* Quick Stats Preview */}
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="text-center">
@@ -205,11 +205,11 @@ export default function AdminDashboard() {
                     Manage Stock
                     <ArrowUpRight className="h-3 w-3" />
                   </Link>
-                </Button>
+          </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
 
         <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 dark:border-blue-900 dark:from-blue-900/20 dark:to-indigo-900/20 group hover:shadow-lg transition-all duration-300">
           <CardContent className="p-6">
@@ -334,12 +334,12 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 text-white group-hover:scale-110 transition-transform duration-300">
                   <Package className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="font-semibold group-hover:text-teal-600 transition-colors">Manage Products</h3>
-                  <p className="text-sm text-muted-foreground">Add, edit, or remove products</p>
-                </div>
               </div>
+              <div>
+                  <h3 className="font-semibold group-hover:text-teal-600 transition-colors">Manage Products</h3>
+                <p className="text-sm text-muted-foreground">Add, edit, or remove products</p>
+              </div>
+            </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Total Products</span>
@@ -351,24 +351,24 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <Button variant="ghost" className="mt-4 w-full justify-start group-hover:bg-teal-50 dark:group-hover:bg-teal-950/20" asChild>
-                <Link href="/admin/products">
-                  Go to Products <ArrowUpRight className="ml-auto h-4 w-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+              <Link href="/admin/products">
+                Go to Products <ArrowUpRight className="ml-auto h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
 
           <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white group-hover:scale-110 transition-transform duration-300">
                   <Users className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="font-semibold group-hover:text-emerald-600 transition-colors">Manage Customers</h3>
-                  <p className="text-sm text-muted-foreground">View and manage customer accounts</p>
-                </div>
               </div>
+              <div>
+                  <h3 className="font-semibold group-hover:text-emerald-600 transition-colors">Manage Customers</h3>
+                <p className="text-sm text-muted-foreground">View and manage customer accounts</p>
+              </div>
+            </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Total Customers</span>
@@ -380,24 +380,24 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <Button variant="ghost" className="mt-4 w-full justify-start group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/20" asChild>
-                <Link href="/admin/customers">
-                  Go to Customers <ArrowUpRight className="ml-auto h-4 w-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+              <Link href="/admin/customers">
+                Go to Customers <ArrowUpRight className="ml-auto h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
 
           <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 text-white group-hover:scale-110 transition-transform duration-300">
                   <CreditCard className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="font-semibold group-hover:text-cyan-600 transition-colors">Process Orders</h3>
-                  <p className="text-sm text-muted-foreground">View and manage customer orders</p>
-                </div>
               </div>
+              <div>
+                  <h3 className="font-semibold group-hover:text-cyan-600 transition-colors">Process Orders</h3>
+                <p className="text-sm text-muted-foreground">View and manage customer orders</p>
+              </div>
+            </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Pending Orders</span>
@@ -409,24 +409,24 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <Button variant="ghost" className="mt-4 w-full justify-start group-hover:bg-cyan-50 dark:group-hover:bg-cyan-950/20" asChild>
-                <Link href="/admin/orders">
-                  Go to Orders <ArrowUpRight className="ml-auto h-4 w-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+              <Link href="/admin/orders">
+                Go to Orders <ArrowUpRight className="ml-auto h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
 
           <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white group-hover:scale-110 transition-transform duration-300">
                   <Calendar className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="font-semibold group-hover:text-purple-600 transition-colors">Manage Content</h3>
-                  <p className="text-sm text-muted-foreground">Update blog posts and pages</p>
-                </div>
               </div>
+              <div>
+                  <h3 className="font-semibold group-hover:text-purple-600 transition-colors">Manage Content</h3>
+                <p className="text-sm text-muted-foreground">Update blog posts and pages</p>
+              </div>
+            </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Published Posts</span>
@@ -438,13 +438,13 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <Button variant="ghost" className="mt-4 w-full justify-start group-hover:bg-purple-50 dark:group-hover:bg-purple-950/20" asChild>
-                <Link href="/admin/blog">
-                  Go to Content <ArrowUpRight className="ml-auto h-4 w-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+              <Link href="/admin/blog">
+                Go to Content <ArrowUpRight className="ml-auto h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
       </div>
 
       {/* Enhanced Charts Section */}
@@ -480,7 +480,7 @@ export default function AdminDashboard() {
               <Download className="h-4 w-4" />
               Reports
             </TabsTrigger>
-          </TabsList>
+        </TabsList>
           <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               <Card className="group hover:shadow-lg transition-all duration-300">
@@ -491,23 +491,23 @@ export default function AdminDashboard() {
                         <TrendingUp className="h-5 w-5 text-teal-600" />
                         Revenue Overview
                       </CardTitle>
-                      <CardDescription>Monthly revenue for the current year</CardDescription>
+                <CardDescription>Monthly revenue for the current year</CardDescription>
                     </div>
                     <Badge variant="outline" className="text-xs">
                       <Eye className="h-3 w-3 mr-1" />
                       Live
                     </Badge>
                   </div>
-                </CardHeader>
+              </CardHeader>
                 <CardContent className="h-[350px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={revenueData}>
-                      <defs>
-                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={revenueData}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.8} />
                           <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
+                      </linearGradient>
+                    </defs>
                       <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
                       <YAxis stroke="#64748b" fontSize={12} />
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -519,18 +519,18 @@ export default function AdminDashboard() {
                           boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                         }}
                       />
-                      <Area
-                        type="monotone"
-                        dataKey="total"
+                    <Area
+                      type="monotone"
+                      dataKey="total"
                         stroke="#14b8a6"
                         strokeWidth={2}
-                        fillOpacity={1}
-                        fill="url(#colorRevenue)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+                      fillOpacity={1}
+                      fill="url(#colorRevenue)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
               
               <Card className="group hover:shadow-lg transition-all duration-300">
                 <CardHeader className="pb-4">
@@ -540,17 +540,17 @@ export default function AdminDashboard() {
                         <Box className="h-5 w-5 text-emerald-600" />
                         Orders Overview
                       </CardTitle>
-                      <CardDescription>Monthly orders for the current year</CardDescription>
+                <CardDescription>Monthly orders for the current year</CardDescription>
                     </div>
                     <Badge variant="outline" className="text-xs">
                       <Activity className="h-3 w-3 mr-1" />
                       Real-time
                     </Badge>
                   </div>
-                </CardHeader>
+              </CardHeader>
                 <CardContent className="h-[350px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={ordersData}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={ordersData}>
                       <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
                       <YAxis stroke="#64748b" fontSize={12} />
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -563,12 +563,12 @@ export default function AdminDashboard() {
                         }}
                       />
                       <Bar dataKey="total" fill="#10b981" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
         <TabsContent value="analytics" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
@@ -681,7 +681,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-        </Tabs>
+      </Tabs>
       </div>
 
       {/* Enhanced Recent Orders & Activity */}

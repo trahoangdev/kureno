@@ -105,21 +105,21 @@ export default function ContactPageClient() {
 
   const teamMembers = [
     {
-      name: "Sarah Chen",
+      name: "Tra Hoang Trong",
       role: "Customer Success Manager",
       email: "sarah@kureno.com",
       avatar: "/placeholder-user.jpg",
       specialties: ["Product Support", "Order Assistance"]
     },
     {
-      name: "Marcus Rodriguez",
+      name: "Tra Hoang Trong",
       role: "Technical Support",
       email: "marcus@kureno.com",
       avatar: "/placeholder-user.jpg",
       specialties: ["Technical Issues", "Account Help"]
     },
     {
-      name: "Elena Kowalski",
+      name: "Tra Hoang Trong",
       role: "Sales Representative",
       email: "elena@kureno.com",
       avatar: "/placeholder-user.jpg",

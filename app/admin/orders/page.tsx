@@ -345,6 +345,12 @@ export default function OrdersPage() {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button asChild className="rounded-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
+              <Link href="/admin/orders/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Order
+              </Link>
+            </Button>
             <Button variant="outline" size="sm" className="rounded-full">
               <Download className="mr-2 h-4 w-4" />
               Export

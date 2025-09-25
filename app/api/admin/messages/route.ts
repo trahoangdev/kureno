@@ -39,6 +39,37 @@ export async function GET(req: NextRequest) {
   })
 }
 
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const { firstName, lastName, email, phone, subject, message, priority = "normal" } = body
+
+    if (!firstName || !lastName || !email || !subject || !message) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    await connectToDatabase()
+
+    const newMessage = new Message({
+      firstName,
+      lastName,
+      email,
+      phone,
+      subject,
+      message,
+      priority,
+      read: false,
+    })
+
+    await newMessage.save()
+
+    return NextResponse.json({ message: newMessage }, { status: 201 })
+  } catch (error) {
+    console.error("Error creating message:", error)
+    return NextResponse.json({ error: "Failed to create message" }, { status: 500 })
+  }
+}
+
 export async function PATCH(req: NextRequest) {
   const session = (await getServerSession(authOptions as any)) as any
   if (!session || session.user?.role !== "admin") {

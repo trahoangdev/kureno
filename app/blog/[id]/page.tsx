@@ -6,7 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Clock, User, Calendar, Tag, BookOpen } from "lucide-react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import rehypeHighlight from "rehype-highlight"
 import BlogInteractions from "./blog-interactions"
+import RelatedPosts from "./related-posts"
+import TableOfContents from "./table-of-contents"
+import ReadingProgress from "./reading-progress"
+import CommentsSystem from "./comments-system"
 
 async function fetchPost(id: string) {
   try {
@@ -37,6 +44,7 @@ export default async function BlogDetail({ params }: { params: { id: string } })
 
   return (
     <div className="min-h-screen bg-background">
+      <ReadingProgress />
       {/* Breadcrumb & Back Button */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container py-4">
@@ -130,7 +138,88 @@ export default async function BlogDetail({ params }: { params: { id: string } })
 
             {/* Article Content */}
             <article className="prose prose-lg dark:prose-invert max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: post.content }} />
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+                components={{
+                  h1: ({ children }) => {
+                    const id = children?.toString().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim() || ''
+                    return <h1 id={id} className="text-3xl font-bold mb-6 mt-8 first:mt-0 scroll-mt-20">{children}</h1>
+                  },
+                  h2: ({ children }) => {
+                    const id = children?.toString().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim() || ''
+                    return <h2 id={id} className="text-2xl font-bold mb-4 mt-6 scroll-mt-20">{children}</h2>
+                  },
+                  h3: ({ children }) => {
+                    const id = children?.toString().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim() || ''
+                    return <h3 id={id} className="text-xl font-semibold mb-3 mt-5 scroll-mt-20">{children}</h3>
+                  },
+                  h4: ({ children }) => {
+                    const id = children?.toString().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim() || ''
+                    return <h4 id={id} className="text-lg font-semibold mb-2 mt-4 scroll-mt-20">{children}</h4>
+                  },
+                  p: ({ children }) => <p className="mb-4 leading-relaxed">{children}</p>,
+                  ul: ({ children }) => <ul className="mb-4 ml-6 list-disc space-y-2">{children}</ul>,
+                  ol: ({ children }) => <ol className="mb-4 ml-6 list-decimal space-y-2">{children}</ol>,
+                  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                  blockquote: ({ children }) => (
+                    <blockquote className="border-l-4 border-primary pl-4 italic my-4 text-muted-foreground">
+                      {children}
+                    </blockquote>
+                  ),
+                  code: ({ children, className }) => {
+                    const isInline = !className
+                    if (isInline) {
+                      return <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono">{children}</code>
+                    }
+                    return (
+                      <pre className="bg-muted p-4 rounded-lg overflow-x-auto my-4">
+                        <code className={className}>{children}</code>
+                      </pre>
+                    )
+                  },
+                  a: ({ href, children }) => (
+                    <a 
+                      href={href} 
+                      className="text-primary hover:underline" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      {children}
+                    </a>
+                  ),
+                  img: ({ src, alt }) => (
+                    <div className="my-6">
+                      <Image 
+                        src={src || "/placeholder.png"} 
+                        alt={alt || ""} 
+                        width={800} 
+                        height={400} 
+                        className="rounded-lg w-full h-auto"
+                      />
+                    </div>
+                  ),
+                  table: ({ children }) => (
+                    <div className="overflow-x-auto my-6">
+                      <table className="min-w-full border-collapse border border-border">
+                        {children}
+                      </table>
+                    </div>
+                  ),
+                  th: ({ children }) => (
+                    <th className="border border-border px-4 py-2 bg-muted font-semibold text-left">
+                      {children}
+                    </th>
+                  ),
+                  td: ({ children }) => (
+                    <td className="border border-border px-4 py-2">
+                      {children}
+                    </td>
+                  ),
+                }}
+              >
+                {post.content}
+              </ReactMarkdown>
             </article>
 
             {/* Article Footer */}
@@ -172,52 +261,13 @@ export default async function BlogDetail({ params }: { params: { id: string } })
               </Card>
 
               {/* Table of Contents */}
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Table of Contents</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="h-1 w-1 rounded-full bg-muted-foreground" />
-                      <span>Introduction</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="h-1 w-1 rounded-full bg-muted-foreground" />
-                      <span>Main Content</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="h-1 w-1 rounded-full bg-muted-foreground" />
-                      <span>Conclusion</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <TableOfContents content={post.content} />
 
-              {/* Related Posts */}
+              {/* Related Posts Sidebar */}
               <Card>
                 <CardContent className="p-6">
                   <h3 className="font-semibold mb-4">Related Posts</h3>
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex gap-3">
-                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md">
-                          <Image 
-                            src="/placeholder.jpg" 
-                            alt={`Related post ${i}`} 
-                            fill 
-                            className="object-cover" 
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium line-clamp-2 mb-1">
-                            Related Blog Post {i}
-                          </h4>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date().toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <RelatedPosts currentPostId={post._id} limit={3} />
                 </CardContent>
               </Card>
             </div>
@@ -227,35 +277,11 @@ export default async function BlogDetail({ params }: { params: { id: string } })
         {/* Related Articles Section */}
         <div className="mt-16">
           <h2 className="text-2xl font-bold mb-8">You Might Also Like</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="group overflow-hidden transition-all hover:shadow-lg">
-                <div className="relative aspect-video overflow-hidden">
-                  <Image 
-                    src="/placeholder.jpg" 
-                    alt={`Related article ${i}`} 
-                    fill 
-                    className="object-cover transition-transform group-hover:scale-105" 
-                  />
-                </div>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="secondary">Technology</Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date().toLocaleDateString()}
-                    </span>
-                  </div>
-                  <h3 className="font-medium mb-2 line-clamp-2">
-                    Related Article {i}: How to Build Better User Experiences
-                  </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    Discover the latest trends and best practices in modern web development.
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+          <RelatedPosts currentPostId={post._id} limit={6} />
         </div>
-        </div>
+
+        {/* Comments Section */}
+        <CommentsSystem postId={post._id} />
       </div>
     </div>
   )
