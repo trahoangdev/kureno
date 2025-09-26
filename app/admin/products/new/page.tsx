@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import ImageUpload from "../image-upload"
+import CloudinaryImageUpload from "../cloudinary-image-upload"
 import ProductVariants from "../product-variants"
 import MarkdownEditor from "../components/markdown-editor"
 import { 
@@ -791,18 +792,21 @@ export default function NewProductPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ImageIcon className="h-5 w-5" />
-                    Product Images
+                    Product Images & Media
                   </CardTitle>
-                  <CardDescription>Upload and manage product images. Drag and drop supported.</CardDescription>
+                  <CardDescription>
+                    Upload images to Cloudinary for optimized delivery and performance, or use manual URLs.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ImageUpload
+                  <CloudinaryImageUpload
                     images={formData.images}
                     onImagesChange={(images) => {
                       setFormData(prev => ({ ...prev, images }))
                       setHasUnsavedChanges(true)
                     }}
                     maxImages={10}
+                    folder="products"
                   />
                 </CardContent>
               </Card>

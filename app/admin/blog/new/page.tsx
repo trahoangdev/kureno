@@ -6,6 +6,9 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
+import CloudinaryUpload, { CloudinaryFile } from '@/components/ui/cloudinary-upload'
+import CloudinaryVideoUpload, { CloudinaryVideo } from '@/components/ui/cloudinary-video-upload'
+import MarkdownEditor from '../../../admin/products/components/markdown-editor'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -226,6 +229,8 @@ export default function NewBlogPostPage() {
     excerpt: "",
     content: "",
     coverImage: "",
+    images: [] as string[],
+    videos: [] as string[],
     tags: "",
     published: false,
     // Advanced fields
@@ -378,7 +383,10 @@ export default function NewBlogPostPage() {
         seo: formData.seo,
         scheduling: formData.scheduling,
         readingTime: formData.readingTime,
-        wordCount: formData.wordCount
+        wordCount: formData.wordCount,
+        // Media fields
+        images: formData.images,
+        videos: formData.videos
       }
 
       const response = await fetch("/api/blog", {
@@ -427,7 +435,10 @@ export default function NewBlogPostPage() {
         author: formData.author || "Admin",
         category: formData.category || "General",
         readingTime: formData.readingTime,
-        wordCount: formData.wordCount
+        wordCount: formData.wordCount,
+        // Media fields
+        images: formData.images,
+        videos: formData.videos
       }
 
       const response = await fetch("/api/blog", {
@@ -690,55 +701,33 @@ export default function NewBlogPostPage() {
                     </p>
             </div>
 
-            <div className="space-y-2">
+                  <div className="space-y-2">
                     <Label htmlFor="content" className="flex items-center gap-2">
                       <PenTool className="h-4 w-4" />
                       Content *
+                      <Badge variant="outline" className="text-xs">
+                        Supports Markdown
+                      </Badge>
                     </Label>
-                    <div className="space-y-2">
-                      {/* Rich Text Editor Toolbar */}
-                      <div className="flex flex-wrap gap-1 p-2 border rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Bold className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Italic className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Underline className="h-4 w-4" />
-                        </Button>
-                        <Separator orientation="vertical" className="h-6" />
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <AlignLeft className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <AlignCenter className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <AlignRight className="h-4 w-4" />
-                        </Button>
-                        <Separator orientation="vertical" className="h-6" />
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <ListOrdered className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Quote className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Code className="h-4 w-4" />
-                        </Button>
-                      </div>
-              <Textarea
-                id="content"
-                name="content"
-                value={formData.content}
-                onChange={handleChange}
-                        placeholder="Write your blog post content here... Use markdown for formatting."
-                        rows={15}
-                        className="bg-white/50 dark:bg-slate-800/50 font-mono text-sm"
-                required
-              />
-                    </div>
+                    <MarkdownEditor
+                      value={formData.content}
+                      onChange={(value: string) => {
+                        setFormData(prev => ({ ...prev, content: value }))
+                        setHasUnsavedChanges(true)
+                        
+                        // Calculate word count and reading time
+                        const words = value.trim().split(/\s+/).filter(word => word.length > 0).length
+                        const readingTime = Math.ceil(words / 200) // Average reading speed: 200 words per minute
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          wordCount: words,
+                          readingTime: readingTime
+                        }))
+                      }}
+                      placeholder="Write your blog post content here... Use markdown for rich formatting."
+                      minHeight="400px"
+                      className="bg-white/50 dark:bg-slate-800/50"
+                    />
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{formData.wordCount} words</span>
                       <span>{formData.readingTime} min read</span>
@@ -750,69 +739,128 @@ export default function NewBlogPostPage() {
 
             {/* Media Tab */}
             <TabsContent value="media" className="space-y-6">
+              {/* Cover Image Section */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ImageIcon className="h-5 w-5" />
-                    Media & Images
+                    Cover Image
                   </CardTitle>
-                  <CardDescription>Upload and manage images for your blog post.</CardDescription>
+                  <CardDescription>
+                    Upload a cover image for your blog post. Recommended size: 1200x630px for optimal social media sharing.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Drag & Drop Area */}
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                      dragOver
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-                        : "border-gray-300 dark:border-gray-700"
-                    }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                  >
-                    <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Upload Cover Image</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Drag and drop images here, or click to browse
-                    </p>
-                    <Button variant="outline" className="mb-2">
-                      <Upload className="mr-2 h-4 w-4" />
-                      Choose Files
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      Supports: JPG, PNG, WebP (Max 10MB each)
-                    </p>
-            </div>
+                  <Tabs defaultValue="cloudinary" className="space-y-4">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="cloudinary">Cloudinary Upload</TabsTrigger>
+                      <TabsTrigger value="url">Manual URL</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="cloudinary">
+                      <CloudinaryUpload
+                        onUpload={(files: CloudinaryFile[]) => {
+                          if (files.length > 0) {
+                            setFormData(prev => ({ ...prev, coverImage: files[0].secureUrl }))
+                            setHasUnsavedChanges(true)
+                          }
+                        }}
+                        maxFiles={1}
+                        maxFileSize={10}
+                        acceptedTypes={['image']}
+                        folder="blog"
+                        multiple={false}
+                        showPreview={true}
+                        className="border rounded-lg p-4"
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="url">
+                      <div className="space-y-4">
+                        <div className="grid gap-4 md:grid-cols-[200px_1fr] items-start">
+                          <div className="overflow-hidden rounded-lg border bg-white dark:bg-slate-800">
+                            <Image 
+                              src={formData.coverImage || "/placeholder.png"} 
+                              alt="Cover preview" 
+                              width={200} 
+                              height={120} 
+                              className="h-32 w-full object-cover" 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Input
+                              id="coverImage"
+                              name="coverImage"
+                              value={formData.coverImage}
+                              onChange={handleChange}
+                              placeholder="https://example.com/cover-image.jpg"
+                              className="bg-white/50 dark:bg-slate-800/50"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Enter a direct URL to your cover image
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
 
-                  {/* Cover Image URL */}
-                  <div className="space-y-4">
-                    <Label htmlFor="coverImage" className="text-base font-medium">Cover Image URL</Label>
-                    <div className="grid gap-4 md:grid-cols-[200px_1fr] items-start">
-                      <div className="overflow-hidden rounded-lg border bg-white dark:bg-slate-800">
-                        <Image 
-                          src={formData.coverImage || "/placeholder.png"} 
-                          alt="Cover preview" 
-                          width={200} 
-                          height={120} 
-                          className="h-32 w-full object-cover" 
-                        />
-                      </div>
-            <div className="space-y-2">
-              <Input
-                id="coverImage"
-                name="coverImage"
-                value={formData.coverImage}
-                onChange={handleChange}
-                          placeholder="https://example.com/cover-image.jpg"
-                          className="bg-white/50 dark:bg-slate-800/50"
-                required
-              />
-                        <p className="text-xs text-muted-foreground">
-                          Recommended size: 1200x630px for optimal social media sharing
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+              {/* Additional Images Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5" />
+                    Additional Images
+                  </CardTitle>
+                  <CardDescription>
+                    Upload additional images for your blog post content. These can be referenced in your markdown.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CloudinaryUpload
+                    onUpload={(files: CloudinaryFile[]) => {
+                      const urls = files.map(file => file.secureUrl)
+                      setFormData(prev => ({ ...prev, images: urls }))
+                      setHasUnsavedChanges(true)
+                    }}
+                    maxFiles={20}
+                    maxFileSize={10}
+                    acceptedTypes={['image']}
+                    folder="blog"
+                    multiple={true}
+                    showPreview={true}
+                    className="border rounded-lg p-4"
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Videos Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    Videos
+                  </CardTitle>
+                  <CardDescription>
+                    Upload videos to enhance your blog post. These can be embedded in your content.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CloudinaryVideoUpload
+                    onUpload={(videos: CloudinaryVideo[]) => {
+                      const urls = videos.map(video => video.secureUrl)
+                      setFormData(prev => ({ ...prev, videos: urls }))
+                      setHasUnsavedChanges(true)
+                    }}
+                    maxFiles={5}
+                    maxFileSize={100}
+                    folder="blog"
+                    multiple={true}
+                    showPreview={true}
+                    className="border rounded-lg p-4"
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
