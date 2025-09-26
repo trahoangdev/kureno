@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import ImageUpload from "../image-upload"
 import ProductVariants from "../product-variants"
+import MarkdownEditor from "../components/markdown-editor"
 import { 
   Loader2, 
   ArrowLeft, 
@@ -137,6 +138,12 @@ export default function NewProductPage() {
     stock: "",
     featured: false,
     images: [""], // Start with one empty image URL
+    // Sales pricing
+    onSale: false,
+    originalPrice: "",
+    salePrice: "",
+    saleStartDate: "",
+    saleEndDate: "",
     // Advanced fields
     sku: "",
     weight: "",
@@ -190,8 +197,8 @@ export default function NewProductPage() {
     }
   }
 
-  const handleSwitchChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, featured: checked }))
+  const handleSwitchChange = (field: string, checked: boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: checked }))
     setHasUnsavedChanges(true)
   }
 
@@ -256,15 +263,30 @@ export default function NewProductPage() {
 
       if (!formData.name.trim()) throw new Error("Product name is required")
       if (!formData.category.trim()) throw new Error("Category is required")
-      const priceNum = Number.parseFloat(formData.price)
-      if (Number.isNaN(priceNum) || priceNum < 0) throw new Error("Price must be a positive number")
+      
+      // Validate pricing based on sale status
+      if (formData.onSale) {
+        const originalPriceNum = Number.parseFloat(formData.originalPrice)
+        const salePriceNum = Number.parseFloat(formData.salePrice)
+        if (Number.isNaN(originalPriceNum) || originalPriceNum < 0) throw new Error("Original price must be a positive number")
+        if (Number.isNaN(salePriceNum) || salePriceNum < 0) throw new Error("Sale price must be a positive number")
+        if (salePriceNum >= originalPriceNum) throw new Error("Sale price must be less than original price")
+      } else {
+        const priceNum = Number.parseFloat(formData.price)
+        if (Number.isNaN(priceNum) || priceNum < 0) throw new Error("Price must be a positive number")
+      }
+      
       const stockNum = Number.parseInt(formData.stock)
       if (Number.isNaN(stockNum) || stockNum < 0) throw new Error("Stock must be a non-negative integer")
 
       const productData = {
         name: formData.name,
         description: formData.description,
-        price: Number.parseFloat(formData.price),
+        price: formData.onSale ? Number.parseFloat(formData.salePrice) : Number.parseFloat(formData.price),
+        originalPrice: formData.onSale ? Number.parseFloat(formData.originalPrice) : null,
+        onSale: formData.onSale,
+        saleStartDate: formData.saleStartDate || null,
+        saleEndDate: formData.saleEndDate || null,
         category: formData.category,
         stock: Number.parseInt(formData.stock),
         featured: formData.featured,
@@ -319,7 +341,10 @@ export default function NewProductPage() {
       const productData = {
         ...formData,
         status: "draft",
-        price: formData.price ? Number.parseFloat(formData.price) : 0,
+        price: formData.onSale ? 
+          (formData.salePrice ? Number.parseFloat(formData.salePrice) : 0) : 
+          (formData.price ? Number.parseFloat(formData.price) : 0),
+        originalPrice: formData.onSale && formData.originalPrice ? Number.parseFloat(formData.originalPrice) : null,
         stock: formData.stock ? Number.parseInt(formData.stock) : 0,
       }
 
@@ -553,59 +578,198 @@ export default function NewProductPage() {
             </div>
 
             <div className="space-y-2">
-                    <Label htmlFor="description" className="flex items-center gap-2">
-                      <FileCode className="h-4 w-4" />
-                      Description *
-                    </Label>
-              <Textarea
-                id="description"
-                name="description"
+              <Label htmlFor="description" className="flex items-center gap-2">
+                <FileCode className="h-4 w-4" />
+                Product Description *
+                <span className="text-xs text-muted-foreground ml-auto">Supports Markdown</span>
+              </Label>
+              <MarkdownEditor
                 value={formData.description}
-                onChange={handleChange}
-                      placeholder="Enter detailed product description"
-                rows={5}
-                      className="bg-white/50 dark:bg-slate-800/50"
-                required
+                onChange={(value: string) => {
+                  setFormData((prev) => ({ ...prev, description: value }))
+                  setHasUnsavedChanges(true)
+                }}
+                placeholder="Enter detailed product description using Markdown formatting..."
+                minHeight="400px"
+                className="bg-white/50 dark:bg-slate-800/50"
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                      <Label htmlFor="price" className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        Price ($) *
-                      </Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.price}
-                  onChange={handleChange}
-                  placeholder="0.00"
-                        className="bg-white/50 dark:bg-slate-800/50"
-                  required
-                />
+            {/* Sales Toggle */}
+            <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border border-orange-200/50 dark:border-orange-800/50">
+              <div className="flex items-center gap-3">
+                <Tag className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                <div>
+                  <Label htmlFor="onSale" className="text-base font-medium">Sale Pricing</Label>
+                  <p className="text-sm text-muted-foreground">Enable sale pricing with original and discounted prices</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                      <Label htmlFor="stock" className="flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        Stock Quantity *
-                      </Label>
-                <Input
-                  id="stock"
-                  name="stock"
-                  type="number"
-                  min="0"
-                  value={formData.stock}
-                  onChange={handleChange}
-                  placeholder="0"
-                        className="bg-white/50 dark:bg-slate-800/50"
-                  required
-                />
-              </div>
+              <Switch id="onSale" checked={formData.onSale} onCheckedChange={(checked) => handleSwitchChange("onSale", checked)} />
             </div>
+
+            {/* Pricing Section */}
+            {formData.onSale ? (
+              // Sale Pricing Layout
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="originalPrice" className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Original Price ($) *
+                    </Label>
+                    <Input
+                      id="originalPrice"
+                      name="originalPrice"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.originalPrice}
+                      onChange={handleChange}
+                      placeholder="0.00"
+                      className="bg-white/50 dark:bg-slate-800/50"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="salePrice" className="flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-red-600" />
+                      Sale Price ($) *
+                    </Label>
+                    <Input
+                      id="salePrice"
+                      name="salePrice"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.salePrice}
+                      onChange={handleChange}
+                      placeholder="0.00"
+                      className="bg-white/50 dark:bg-slate-800/50 border-red-200 focus:border-red-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Sale Duration */}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="saleStartDate" className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Sale Start Date
+                    </Label>
+                    <Input
+                      id="saleStartDate"
+                      name="saleStartDate"
+                      type="datetime-local"
+                      value={formData.saleStartDate}
+                      onChange={handleChange}
+                      className="bg-white/50 dark:bg-slate-800/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="saleEndDate" className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Sale End Date
+                    </Label>
+                    <Input
+                      id="saleEndDate"
+                      name="saleEndDate"
+                      type="datetime-local"
+                      value={formData.saleEndDate}
+                      onChange={handleChange}
+                      className="bg-white/50 dark:bg-slate-800/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Sale Discount Calculation */}
+                {formData.originalPrice && formData.salePrice && (
+                  <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="h-4 w-4 text-green-600" />
+                      <span className="font-medium text-green-800 dark:text-green-200">Discount Calculation</span>
+                    </div>
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Original Price:</span>
+                        <span>${parseFloat(formData.originalPrice).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Sale Price:</span>
+                        <span className="text-red-600 font-medium">${parseFloat(formData.salePrice).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between font-medium text-green-600">
+                        <span>You Save:</span>
+                        <span>${(parseFloat(formData.originalPrice) - parseFloat(formData.salePrice)).toFixed(2)} ({Math.round(((parseFloat(formData.originalPrice) - parseFloat(formData.salePrice)) / parseFloat(formData.originalPrice)) * 100)}% off)</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Regular Pricing Layout
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Price ($) *
+                  </Label>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.price}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                    className="bg-white/50 dark:bg-slate-800/50"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stock" className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Stock Quantity *
+                  </Label>
+                  <Input
+                    id="stock"
+                    name="stock"
+                    type="number"
+                    min="0"
+                    value={formData.stock}
+                    onChange={handleChange}
+                    placeholder="0"
+                    className="bg-white/50 dark:bg-slate-800/50"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Stock field for sale pricing layout */}
+            {formData.onSale && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="stock" className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Stock Quantity *
+                  </Label>
+                  <Input
+                    id="stock"
+                    name="stock"
+                    type="number"
+                    min="0"
+                    value={formData.stock}
+                    onChange={handleChange}
+                    placeholder="0"
+                    className="bg-white/50 dark:bg-slate-800/50"
+                    required
+                  />
+                </div>
+                <div></div> {/* Empty div for grid alignment */}
+              </div>
+            )}
 
                   <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200/50 dark:border-blue-800/50">
                     <div className="flex items-center gap-3">
@@ -615,7 +779,7 @@ export default function NewProductPage() {
                         <p className="text-sm text-muted-foreground">Highlight this product on the homepage</p>
                       </div>
                     </div>
-                    <Switch id="featured" checked={formData.featured} onCheckedChange={handleSwitchChange} />
+                    <Switch id="featured" checked={formData.featured} onCheckedChange={(checked) => handleSwitchChange("featured", checked)} />
                   </div>
                 </CardContent>
               </Card>
@@ -980,14 +1144,36 @@ export default function NewProductPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold">
-                    ${formData.price || "0.00"}
-                  </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {formData.onSale ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg text-muted-foreground line-through">
+                        ${formData.originalPrice || "0.00"}
+                      </span>
+                      <span className="text-2xl font-bold text-red-600">
+                        ${formData.salePrice || "0.00"}
+                      </span>
+                      {formData.originalPrice && formData.salePrice && (
+                        <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                          {Math.round(((parseFloat(formData.originalPrice) - parseFloat(formData.salePrice)) / parseFloat(formData.originalPrice)) * 100)}% OFF
+                        </Badge>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-2xl font-bold">
+                      ${formData.price || "0.00"}
+                    </span>
+                  )}
                   {formData.featured && (
                     <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                       <Star className="mr-1 h-3 w-3" />
                       Featured
+                    </Badge>
+                  )}
+                  {formData.onSale && (
+                    <Badge variant="destructive" className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                      <Tag className="mr-1 h-3 w-3" />
+                      Sale
                     </Badge>
                   )}
                 </div>

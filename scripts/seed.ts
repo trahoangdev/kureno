@@ -6,6 +6,22 @@ import BlogPost from "../lib/models/blog-post"
 import Category from "../lib/models/category"
 import Order from "../lib/models/order"
 import Message from "../lib/models/message"
+import Wishlist from "../models/wishlist"
+
+
+// User Notification Schema for seeding
+const userNotificationSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  type: { type: String, enum: ["order", "wishlist", "product", "system", "promotion"], required: true },
+  title: { type: String, required: true },
+  message: { type: String, required: true },
+  data: { type: mongoose.Schema.Types.Mixed, default: {} },
+  read: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
+  expiresAt: { type: Date, default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
+})
+
+const UserNotification = (mongoose.models.UserNotification as any) || mongoose.model("UserNotification", userNotificationSchema)
 
 // Product categories details - Heritage & Craft focused
 const categoriesData = [
@@ -651,6 +667,7 @@ async function run() {
     Category.deleteMany({}),
     Order.deleteMany({}),
     Message.deleteMany({}),
+    UserNotification.deleteMany({}),
   ])
 
   // Users (use create/save to trigger pre-save password hashing)
@@ -1204,6 +1221,106 @@ Heritage home decor is about more than aesthetics – it's about creating spaces
   ]
   await Message.insertMany(messagesData)
 
+  // Create sample wishlist items
+  const allUsers = await User.find({}, '_id').lean()
+  const allProducts = await Product.find({}, '_id').lean()
+  
+  if (allUsers.length > 0 && allProducts.length > 0) {
+    const wishlistData = []
+    
+    // Add some random wishlist items for each user
+    for (const user of allUsers.slice(0, 3)) { // Only for first 3 users
+      const randomProducts = allProducts
+        .sort(() => Math.random() - 0.5)
+        .slice(0, Math.floor(Math.random() * 5) + 2) // 2-6 items per user
+      
+      for (const product of randomProducts) {
+        wishlistData.push({
+          userId: (user._id as mongoose.Types.ObjectId).toString(),
+          productId: product._id as mongoose.Types.ObjectId,
+          addedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000) // Random date within last 30 days
+        })
+      }
+    }
+    
+    if (wishlistData.length > 0) {
+      await Wishlist.insertMany(wishlistData)
+    }
+  }
+
+  // User Notifications
+  const notificationsData = []
+  
+  // Create notifications for each customer user
+  for (const user of customerUsers) {
+    // Order notifications
+    notificationsData.push({
+      userId: user._id,
+      type: "order",
+      title: "Order Delivered Successfully",
+      message: "Your order has been delivered. Thank you for shopping with us!",
+      data: { orderId: "sample-order-id" },
+      read: Math.random() > 0.5,
+      createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Random within last week
+    })
+
+    notificationsData.push({
+      userId: user._id,
+      type: "order",
+      title: "Order Shipped",
+      message: "Great news! Your order is on its way and will arrive soon.",
+      data: { orderId: "sample-order-id-2" },
+      read: Math.random() > 0.7,
+      createdAt: new Date(Date.now() - Math.random() * 3 * 24 * 60 * 60 * 1000), // Random within last 3 days
+    })
+
+    // Product notifications
+    notificationsData.push({
+      userId: user._id,
+      type: "product",
+      title: "New Heritage Collection Available",
+      message: "Discover our latest handcrafted items celebrating traditional artistry.",
+      data: { productSlug: "traditional-ikat-silk-scarf" },
+      read: false,
+      createdAt: new Date(Date.now() - Math.random() * 2 * 24 * 60 * 60 * 1000), // Random within last 2 days
+    })
+
+    // Wishlist notifications
+    notificationsData.push({
+      userId: user._id,
+      type: "wishlist",
+      title: "Wishlist Item Back in Stock",
+      message: "Good news! An item from your wishlist is now available.",
+      data: {},
+      read: Math.random() > 0.6,
+      createdAt: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000), // Random within last 5 days
+    })
+
+    // Promotion notifications
+    notificationsData.push({
+      userId: user._id,
+      type: "promotion",
+      title: "Special Heritage Sale - 20% Off",
+      message: "Limited time offer on our premium handcrafted collection.",
+      data: { link: "/products?sale=true" },
+      read: Math.random() > 0.4,
+      createdAt: new Date(Date.now() - Math.random() * 1 * 24 * 60 * 60 * 1000), // Random within last day
+    })
+
+    // System notifications
+    notificationsData.push({
+      userId: user._id,
+      type: "system",
+      title: "Profile Updated Successfully",
+      message: "Your profile information has been updated successfully.",
+      data: {},
+      read: true,
+      createdAt: new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000), // Random within last 10 days
+    })
+  }
+
+  await UserNotification.insertMany(notificationsData)
+
   const counts = await Promise.all([
     User.countDocuments({}),
     Category.countDocuments({}),
@@ -1211,6 +1328,8 @@ Heritage home decor is about more than aesthetics – it's about creating spaces
     BlogPost.countDocuments({}),
     Order.countDocuments({}),
     Message.countDocuments({}),
+    Wishlist.countDocuments({}),
+    UserNotification.countDocuments({}),
   ])
 
   console.log(
@@ -1221,7 +1340,9 @@ Heritage home decor is about more than aesthetics – it's about creating spaces
         products: counts[2], 
         blogs: counts[3],
         orders: counts[4],
-        messages: counts[5]
+        messages: counts[5],
+        wishlist: counts[6],
+        notifications: counts[7]
       },
       null,
       2,

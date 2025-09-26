@@ -277,7 +277,7 @@ export default async function Home() {
             <div className="relative">
               <div className="relative h-[500px] lg:h-[600px] rounded-2xl overflow-hidden shadow-2xl">
             <Image
-                  src="/placeholder.svg?height=600&width=500"
+                  src="/unnamed.png?height=600&width=500"
               alt="Kureno featured product"
               fill
               className="object-cover"
@@ -495,7 +495,7 @@ export default async function Home() {
             <div className="relative">
               <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
                 <Image 
-                  src="/placeholder.svg?height=500&width=600" 
+                  src="/unnamed (2).png?height=500&width=600" 
                   alt="About Kureno" 
                   fill 
                   className="object-cover" 

@@ -34,6 +34,7 @@ import ProductReviews from "@/app/products/[id]/product-reviews"
 import ReviewsTab from "@/app/products/[id]/reviews-tab"
 import RelatedProducts from "@/app/products/[id]/related-products"
 import ProductVariantsWrapper from "@/app/products/[id]/product-variants-wrapper"
+import WishlistButton from "@/app/products/[id]/wishlist-button"
 
 async function fetchProduct(id: string) {
   try {
@@ -168,10 +169,10 @@ export default async function ProductDetail({ params }: { params: { id: string }
             {/* Additional Action Buttons */}
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" size="lg" className="flex-1">
-                  <Heart className="mr-2 h-4 w-4" />
-                  Wishlist
-                </Button>
+                <WishlistButton 
+                  productId={p._id} 
+                  className="flex-1"
+                />
                 <Button variant="outline" size="lg" className="flex-1">
                   <Share2 className="mr-2 h-4 w-4" />
                   Share

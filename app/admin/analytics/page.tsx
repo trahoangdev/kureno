@@ -1,6 +1,8 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react"
+import RefreshButton from "../components/refresh-button"
+import ExportImportDialog from "../components/export-import-dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
 import { Badge } from "../../../components/ui/badge"
@@ -273,14 +275,15 @@ export default function AnalyticsPage() {
                 <SelectItem value="all">All time</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" className="rounded-full">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
+            <ExportImportDialog 
+              trigger={
+                <Button variant="outline" size="sm" className="rounded-full">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              }
+            />
+            <RefreshButton variant="outline" size="sm" className="rounded-full" />
           </div>
         </div>
         

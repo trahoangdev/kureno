@@ -1,6 +1,8 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react"
+import RefreshButton from "../components/refresh-button"
+import ExportImportDialog from "../components/export-import-dialog"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
@@ -125,7 +127,7 @@ export default function ReviewsPage() {
       router.push("/admin/login")
       return
     }
-    if (session.user?.role !== "admin") {
+    if ((session.user as any)?.role !== "admin") {
       router.push("/")
       return
     }
@@ -171,7 +173,7 @@ export default function ReviewsPage() {
       }
     }
 
-    if (session?.user?.role === "admin") {
+    if ((session?.user as any)?.role === "admin") {
       fetchReviews()
     }
   }, [session, searchQuery, statusFilter, ratingFilter, sortBy, toast])
@@ -325,7 +327,7 @@ export default function ReviewsPage() {
     return verified ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
   }
 
-  if (!session || session.user?.role !== "admin") {
+  if (!session || (session.user as any)?.role !== "admin") {
     return null
   }
 
@@ -342,14 +344,15 @@ export default function ReviewsPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" className="rounded-full">
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-              <Button variant="outline" size="sm" className="rounded-full">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
+              <ExportImportDialog 
+                trigger={
+                  <Button variant="outline" size="sm" className="rounded-full">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                }
+              />
+              <RefreshButton variant="outline" size="sm" className="rounded-full" />
               <Button variant="outline" size="sm" className="rounded-full">
                 <Settings className="mr-2 h-4 w-4" />
                 Settings

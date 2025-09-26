@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import RefreshButton from "../components/refresh-button"
+import ExportImportDialog from "../components/export-import-dialog"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -351,18 +353,19 @@ export default function OrdersPage() {
                 New Order
               </Link>
             </Button>
-            <Button variant="outline" size="sm" className="rounded-full">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
+            <ExportImportDialog 
+              trigger={
+                <Button variant="outline" size="sm" className="rounded-full">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              }
+            />
             <Button variant="outline" size="sm" className="rounded-full">
               <Printer className="mr-2 h-4 w-4" />
               Print
             </Button>
-            <Button variant="outline" size="sm" className="rounded-full">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
+            <RefreshButton variant="outline" size="sm" className="rounded-full" />
           </div>
         </div>
         

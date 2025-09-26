@@ -24,6 +24,8 @@ import {
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu"
 import AdvancedSearch from "@/components/advanced-search"
+import NotificationsDropdown from "@/components/notifications-dropdown"
+import SearchModal from "@/components/search-modal"
 
 const routes = [
   {
@@ -162,11 +164,7 @@ export default function Navbar() {
               </Button>
 
               {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-4 w-4" />
-                <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-                <span className="sr-only">Notifications</span>
-              </Button>
+              <NotificationsDropdown />
 
               {/* User Menu */}
               <DropdownMenu>
@@ -476,8 +474,8 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Advanced Search */}
-      <AdvancedSearch isOpen={isSearchOpen} onOpenChange={setIsSearchOpen} />
+      {/* Search Modal */}
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       {/* Cart */}
       <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />

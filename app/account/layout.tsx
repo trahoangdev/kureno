@@ -11,10 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, Package, Settings, LogOut, CreditCard, Heart, Bell, Shield, Crown, Star } from "lucide-react"
+import { User, Package, Settings, LogOut, CreditCard, Heart, Bell, Shield, Crown, Star, Loader2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
-const accountLinks = [
+const getAccountLinks = (stats: any) => [
   {
     href: "/account",
     label: "Profile",
@@ -26,14 +26,14 @@ const accountLinks = [
     label: "Orders",
     icon: Package,
     description: "View your order history",
-    badge: "3",
+    badge: stats?.totalOrders?.toString() || "0",
   },
   {
     href: "/account/wishlist",
     label: "Wishlist",
     icon: Heart,
     description: "Your saved items",
-    badge: "12",
+    badge: stats?.wishlistCount?.toString() || "0",
   },
   {
     href: "/account/payment",
@@ -46,7 +46,7 @@ const accountLinks = [
     label: "Notifications",
     icon: Bell,
     description: "Email and push preferences",
-    badge: "2",
+    badge: "0", // TODO: Add notification count API
   },
   {
     href: "/account/settings",
@@ -61,10 +61,41 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   const router = useRouter()
   const { data: session, status } = useSession()
   const [mounted, setMounted] = useState(false)
+  const [userStats, setUserStats] = useState({
+    totalOrders: 0,
+    wishlistCount: 0,
+    reviewsCount: 0,
+    averageRating: 0,
+    totalSpent: 0,
+    completedOrders: 0,
+    memberSince: null,
+    lastOrderDate: null
+  })
+  const [statsLoading, setStatsLoading] = useState(true)
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+    if (session?.user) {
+      fetchUserStats()
+    }
+  }, [session])
+
+  const fetchUserStats = async () => {
+    try {
+      setStatsLoading(true)
+      const response = await fetch("/api/user/stats")
+      if (response.ok) {
+        const data = await response.json()
+        setUserStats(data.stats)
+      } else {
+        console.error("Failed to fetch user stats")
+      }
+    } catch (error) {
+      console.error("Error fetching user stats:", error)
+    } finally {
+      setStatsLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (mounted && status === "unauthenticated") {
@@ -149,15 +180,29 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
                 <CardContent className="pt-0">
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div className="space-y-1">
-                      <p className="text-2xl font-bold text-teal-600">3</p>
+                      {statsLoading ? (
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto text-teal-600" />
+                      ) : (
+                        <p className="text-2xl font-bold text-teal-600">{userStats.totalOrders}</p>
+                      )}
                       <p className="text-xs text-muted-foreground">Orders</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-2xl font-bold text-emerald-600">12</p>
+                      {statsLoading ? (
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto text-emerald-600" />
+                      ) : (
+                        <p className="text-2xl font-bold text-emerald-600">{userStats.wishlistCount}</p>
+                      )}
                       <p className="text-xs text-muted-foreground">Wishlist</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-2xl font-bold text-blue-600">4.8</p>
+                      {statsLoading ? (
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto text-blue-600" />
+                      ) : (
+                        <p className="text-2xl font-bold text-blue-600">
+                          {userStats.averageRating > 0 ? userStats.averageRating.toFixed(1) : "N/A"}
+                        </p>
+                      )}
                       <p className="text-xs text-muted-foreground">Rating</p>
                     </div>
                   </div>
@@ -171,7 +216,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
                 </CardHeader>
                 <CardContent className="pt-0">
                   <nav className="space-y-1">
-                    {accountLinks.map((link) => (
+                    {getAccountLinks(userStats).map((link) => (
                       <Link key={link.href} href={link.href}>
                         <div
                           className={`flex items-center gap-3 rounded-lg p-3 transition-all duration-200 hover:bg-muted/50 ${

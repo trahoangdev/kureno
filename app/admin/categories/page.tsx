@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import ExportImportDialog from "../components/export-import-dialog"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -235,14 +236,23 @@ export default function AdminCategoriesPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="rounded-full">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full">
-              <Upload className="mr-2 h-4 w-4" />
-              Import
-            </Button>
+            <ExportImportDialog 
+              trigger={
+                <Button variant="outline" size="sm" className="rounded-full">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              }
+            />
+            <ExportImportDialog 
+              defaultTab="import"
+              trigger={
+                <Button variant="outline" size="sm" className="rounded-full">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import
+                </Button>
+              }
+            />
             <Button onClick={openCreate} className="rounded-full">
               <Plus className="mr-2 h-4 w-4" />
               New Category

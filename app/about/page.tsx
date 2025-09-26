@@ -79,7 +79,7 @@ export default function AboutPage() {
       name: "Tra Hoang Trong",
       role: "Founder & CEO",
       bio: "Passionate about preserving traditional craftsmanship while embracing modern innovation.",
-      image: "/placeholder.svg?height=300&width=300",
+      image: "/unnamed (2).png?height=300&width=300",
       social: {
         linkedin: "#",
         twitter: "#",
@@ -90,7 +90,7 @@ export default function AboutPage() {
       name: "Tra Hoang Trong",
       role: "Head of Design",
       bio: "Bringing cultural heritage to life through thoughtful, functional design.",
-      image: "/placeholder.svg?height=300&width=300",
+      image: "/unnamed.png?height=300&width=300",
       social: {
         linkedin: "#",
         twitter: "#",
@@ -101,7 +101,7 @@ export default function AboutPage() {
       name: "Tra Hoang Trong",
       role: "Production Manager",
       bio: "Ensuring every product meets our high standards of quality and sustainability.",
-      image: "/placeholder.svg?height=300&width=300",
+      image: "/unnamed.png?height=300&width=300",
       social: {
         linkedin: "#",
         twitter: "#",
@@ -112,7 +112,7 @@ export default function AboutPage() {
       name: "Tra Hoang Trong",
       role: "Community Relations",
       bio: "Building bridges between our brand and the local artisan community.",
-      image: "/placeholder.svg?height=300&width=300",
+      image: "/unnamed.png?height=300&width=300",
       social: {
         linkedin: "#",
         twitter: "#",
@@ -252,7 +252,7 @@ export default function AboutPage() {
             <div className="relative">
               <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
                 <Image 
-                  src="/placeholder.svg?height=500&width=600" 
+                  src="/unnamed.png?height=500&width=600" 
                   alt="Kureno founders" 
                   fill 
                   className="object-cover" 

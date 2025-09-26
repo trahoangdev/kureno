@@ -3,6 +3,8 @@
 import type React from "react"
 
 import { useState, useEffect, useMemo } from "react"
+import RefreshButton from "../components/refresh-button"
+import ExportImportDialog from "../components/export-import-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -543,18 +545,19 @@ export default function AdminUsersPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="rounded-full">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
+            <ExportImportDialog 
+              trigger={
+                <Button variant="outline" size="sm" className="rounded-full">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              }
+            />
             <Button variant="outline" size="sm" className="rounded-full">
               <Printer className="mr-2 h-4 w-4" />
               Print
             </Button>
-            <Button variant="outline" size="sm" className="rounded-full">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
+            <RefreshButton variant="outline" size="sm" className="rounded-full" />
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button

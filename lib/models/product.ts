@@ -36,27 +36,59 @@ export interface IProductInventory {
   lowStockThreshold: number
 }
 
-export interface IProduct extends mongoose.Document {
+export interface IProductMethods {
+  updateStock(quantity: number): Promise<IProduct>
+  updateRating(rating: number, reviewCount: number): Promise<IProduct>
+  toggleFeatured(): Promise<IProduct>
+  activate(): Promise<IProduct>
+  deactivate(): Promise<IProduct>
+}
+
+export interface IProductStatics {
+  findActive(): mongoose.Query<IProduct[], IProduct>
+  findFeatured(limit?: number): mongoose.Query<IProduct[], IProduct>
+  findOnSale(limit?: number): mongoose.Query<IProduct[], IProduct>
+  findByCategory(category: string, limit?: number): mongoose.Query<IProduct[], IProduct>
+  searchProducts(query: string, options?: any): mongoose.Query<IProduct[], IProduct>
+}
+
+export interface IProduct extends mongoose.Document, IProductMethods {
   name: string
   description: string
   price: number
+  originalPrice?: number
+  onSale: boolean
+  saleStartDate?: Date
+  saleEndDate?: Date
   images: string[]
   category: string
   stock: number
   featured: boolean
   // Advanced fields
-  sku: string
-  weight: number
-  dimensions: IProductDimensions
-  seo: IProductSEO
-  variants: IVariant[]
-  tags: string[]
+  sku?: string
+  weight?: number
+  dimensions?: IProductDimensions
+  seo?: IProductSEO
+  variants?: IVariant[]
+  tags?: string[]
   status: "draft" | "published" | "archived"
   visibility: "public" | "private" | "hidden"
-  inventory: IProductInventory
+  inventory?: IProductInventory
+  // Computed fields
+  slug?: string
+  reviewCount?: number
+  averageRating?: number
+  // Virtual fields
+  isActive: boolean
+  discountPercentage: number
+  isInStock: boolean
+  isLowStock: boolean
+  displayPrice: number
   createdAt: Date
   updatedAt: Date
 }
+
+export interface IProductModel extends mongoose.Model<IProduct>, IProductStatics {}
 
 const variantOptionSchema = new mongoose.Schema({
   id: { type: String, required: true },
@@ -73,7 +105,7 @@ const variantSchema = new mongoose.Schema({
   id: { type: String, required: true },
   name: { type: String, required: true },
   type: { type: String, required: true },
-  options: [variantOptionSchema]
+  options: { type: [variantOptionSchema], default: [] }
 }, { _id: false })
 
 const dimensionsSchema = new mongoose.Schema({
@@ -101,25 +133,54 @@ const productSchema = new mongoose.Schema(
       required: [true, "Please provide a product name"],
       trim: true,
       maxlength: [100, "Product name cannot exceed 100 characters"],
+      index: true,
     },
     description: {
       type: String,
       required: [true, "Please provide a product description"],
-      maxlength: [2000, "Description cannot exceed 2000 characters"],
+      maxlength: [5000, "Description cannot exceed 5000 characters"],
     },
     price: {
       type: Number,
       required: [true, "Please provide a product price"],
       min: [0, "Price must be positive"],
+      index: true,
+    },
+    originalPrice: {
+      type: Number,
+      min: [0, "Original price must be positive"],
+      default: null,
+    },
+    onSale: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    saleStartDate: {
+      type: Date,
+      default: null,
+    },
+    saleEndDate: {
+      type: Date,
+      default: null,
     },
     images: {
       type: [String],
       required: [true, "Please provide at least one product image"],
+      validate: [
+        {
+          validator: function(images: string[]) {
+            return images && images.length > 0 && images.length <= 10;
+          },
+          message: "Product must have between 1 and 10 images"
+        }
+      ]
     },
     category: {
       type: String,
       required: [true, "Please provide a product category"],
       trim: true,
+      index: true,
     },
     stock: {
       type: Number,
@@ -130,6 +191,7 @@ const productSchema = new mongoose.Schema(
     featured: {
       type: Boolean,
       default: false,
+      index: true,
     },
     // Advanced fields
     sku: {
@@ -137,32 +199,245 @@ const productSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
       trim: true,
+      uppercase: true,
     },
     weight: {
       type: Number,
       min: [0, "Weight must be positive"],
       default: 0,
     },
-    dimensions: dimensionsSchema,
-    seo: seoSchema,
-    variants: [variantSchema],
+    dimensions: {
+      type: dimensionsSchema,
+      default: () => ({ length: 0, width: 0, height: 0 }),
+    },
+    seo: {
+      type: seoSchema,
+      default: () => ({ title: "", description: "", keywords: "" }),
+    },
+    variants: {
+      type: [variantSchema],
+      default: [],
+    },
     tags: {
       type: [String],
       default: [],
+      validate: [
+        {
+          validator: function(tags: string[]) {
+            return tags.length <= 20;
+          },
+          message: "Cannot have more than 20 tags"
+        }
+      ]
     },
     status: {
       type: String,
-      enum: ["draft", "published", "archived"],
+      enum: {
+        values: ["draft", "published", "archived"],
+        message: "Status must be draft, published, or archived"
+      },
       default: "draft",
+      index: true,
     },
     visibility: {
       type: String,
-      enum: ["public", "private", "hidden"],
+      enum: {
+        values: ["public", "private", "hidden"],
+        message: "Visibility must be public, private, or hidden"
+      },
       default: "public",
+      index: true,
     },
-    inventory: inventorySchema,
+    inventory: {
+      type: inventorySchema,
+      default: () => ({
+        trackQuantity: true,
+        allowBackorder: false,
+        lowStockThreshold: 5
+      }),
+    },
+    // Computed fields
+    slug: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    reviewCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    averageRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
   },
-  { timestamps: true },
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  },
 )
+
+// Virtual fields
+productSchema.virtual('isActive').get(function() {
+  return this.status === 'published' && this.visibility === 'public'
+})
+
+productSchema.virtual('discountPercentage').get(function() {
+  if (this.onSale && this.originalPrice && this.originalPrice > this.price) {
+    return Math.round(((this.originalPrice - this.price) / this.originalPrice) * 100)
+  }
+  return 0
+})
+
+productSchema.virtual('isInStock').get(function() {
+  return this.stock > 0 || (this.inventory?.allowBackorder ?? false)
+})
+
+productSchema.virtual('isLowStock').get(function() {
+  const threshold = this.inventory?.lowStockThreshold ?? 5
+  return this.stock <= threshold && this.stock > 0
+})
+
+productSchema.virtual('displayPrice').get(function() {
+  return this.onSale && this.originalPrice ? this.price : this.price
+})
+
+// Indexes for better performance
+productSchema.index({ name: 'text', description: 'text', tags: 'text' })
+productSchema.index({ category: 1, featured: -1 })
+productSchema.index({ price: 1, onSale: -1 })
+productSchema.index({ status: 1, visibility: 1 })
+productSchema.index({ createdAt: -1 })
+productSchema.index({ slug: 1 }, { unique: true, sparse: true })
+
+// Pre-save middleware
+productSchema.pre('save', function(next) {
+  // Generate slug from name if not provided
+  if (!this.slug && this.name) {
+    this.slug = this.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 50)
+  }
+  
+  // Auto-generate SKU if not provided
+  if (!this.sku && this.category && this.name) {
+    const categoryPrefix = this.category.slice(0, 3).toUpperCase()
+    const namePrefix = this.name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase()
+    const randomSuffix = Math.random().toString(36).substr(2, 4).toUpperCase()
+    this.sku = `${categoryPrefix}-${namePrefix}-${randomSuffix}`
+  }
+  
+  // Validate sale pricing
+  if (this.onSale) {
+    if (!this.originalPrice || this.originalPrice <= this.price) {
+      return next(new Error('Original price must be greater than sale price when on sale'))
+    }
+    
+    // Check sale date validity
+    if (this.saleStartDate && this.saleEndDate && this.saleStartDate >= this.saleEndDate) {
+      return next(new Error('Sale start date must be before sale end date'))
+    }
+  }
+  
+  // Ensure SEO title defaults to product name
+  if (this.seo && !this.seo.title) {
+    this.seo.title = this.name.substring(0, 60)
+  }
+  
+  // Ensure SEO description defaults to product description
+  if (this.seo && !this.seo.description) {
+    this.seo.description = this.description.substring(0, 160)
+  }
+  
+  next()
+})
+
+// Instance methods
+productSchema.methods.updateStock = function(quantity: number) {
+  this.stock = Math.max(0, this.stock + quantity)
+  return this.save()
+}
+
+productSchema.methods.updateRating = function(rating: number, reviewCount: number) {
+  this.averageRating = rating
+  this.reviewCount = reviewCount
+  return this.save()
+}
+
+productSchema.methods.toggleFeatured = function() {
+  this.featured = !this.featured
+  return this.save()
+}
+
+productSchema.methods.activate = function() {
+  this.status = 'published'
+  this.visibility = 'public'
+  return this.save()
+}
+
+productSchema.methods.deactivate = function() {
+  this.status = 'archived'
+  return this.save()
+}
+
+// Static methods
+productSchema.statics.findActive = function() {
+  return this.find({ status: 'published', visibility: 'public' })
+}
+
+productSchema.statics.findFeatured = function(limit = 10) {
+  return this.find({ 
+    status: 'published', 
+    visibility: 'public', 
+    featured: true 
+  }).limit(limit)
+}
+
+productSchema.statics.findOnSale = function(limit = 10) {
+  return this.find({ 
+    status: 'published', 
+    visibility: 'public', 
+    onSale: true,
+    $or: [
+      { saleEndDate: { $exists: false } },
+      { saleEndDate: null },
+      { saleEndDate: { $gte: new Date() } }
+    ]
+  }).limit(limit)
+}
+
+productSchema.statics.findByCategory = function(category: string, limit = 10) {
+  return this.find({ 
+    status: 'published', 
+    visibility: 'public', 
+    category 
+  }).limit(limit)
+}
+
+productSchema.statics.searchProducts = function(query: string, options: any = {}) {
+  const { limit = 10, page = 1, category, minPrice, maxPrice, sortBy = 'createdAt', sortOrder = -1 } = options
+  const skip = (page - 1) * limit
+  
+  const searchQuery: any = {
+    status: 'published',
+    visibility: 'public',
+    $text: { $search: query }
+  }
+  
+  if (category) searchQuery.category = category
+  if (minPrice !== undefined) searchQuery.price = { ...searchQuery.price, $gte: minPrice }
+  if (maxPrice !== undefined) searchQuery.price = { ...searchQuery.price, $lte: maxPrice }
+  
+  return this.find(searchQuery)
+    .sort({ [sortBy]: sortOrder })
+    .skip(skip)
+    .limit(limit)
+}
 
 export default mongoose.models.Product || mongoose.model<IProduct>("Product", productSchema)

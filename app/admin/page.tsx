@@ -1,6 +1,8 @@
 "use client"
 
 import Link from "next/link"
+import RefreshButton from "./components/refresh-button"
+import ExportImportDialog from "./components/export-import-dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -123,21 +125,22 @@ export default function AdminDashboard() {
           </div>
           
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="rounded-full">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
+            <RefreshButton variant="outline" size="sm" className="rounded-full" />
+            <ExportImportDialog 
+              trigger={
+                <Button variant="outline" size="sm" className="rounded-full">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              }
+            />
             <Button asChild className="rounded-full">
-            <Link href="/admin/orders/new">
+              <Link href="/admin/orders/new">
                 <Plus className="mr-2 h-4 w-4" />
-              New Order
-            </Link>
-          </Button>
-        </div>
+                New Order
+              </Link>
+            </Button>
+          </div>
       </div>
 
         {/* Quick Stats Preview */}

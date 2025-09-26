@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, User, Mail, Phone, MapPin, Camera, Shield, CheckCircle, AlertCircle, Edit3, Save, X } from "lucide-react"
+import { Loader2, User, Mail, Phone, MapPin, Camera, Shield, CheckCircle, AlertCircle, Edit3, Save, X, DollarSign, Calendar, TrendingUp } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function AccountProfilePage() {
@@ -35,6 +35,17 @@ export default function AccountProfilePage() {
   const [mounted, setMounted] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [originalData, setOriginalData] = useState(formData)
+  const [userStats, setUserStats] = useState({
+    totalOrders: 0,
+    wishlistCount: 0,
+    reviewsCount: 0,
+    averageRating: 0,
+    totalSpent: 0,
+    completedOrders: 0,
+    memberSince: null,
+    lastOrderDate: null
+  })
+  const [statsLoading, setStatsLoading] = useState(true)
 
   useEffect(() => {
     setMounted(true)
@@ -48,6 +59,7 @@ export default function AccountProfilePage() {
 
       // Fetch additional user data
       fetchUserProfile()
+      fetchUserStats()
     }
   }, [session])
 
@@ -71,6 +83,23 @@ export default function AccountProfilePage() {
       }
     } catch (error) {
       console.error("Error fetching user profile:", error)
+    }
+  }
+
+  const fetchUserStats = async () => {
+    try {
+      setStatsLoading(true)
+      const response = await fetch("/api/user/stats")
+      if (response.ok) {
+        const data = await response.json()
+        setUserStats(data.stats)
+      } else {
+        console.error("Failed to fetch user stats")
+      }
+    } catch (error) {
+      console.error("Error fetching user stats:", error)
+    } finally {
+      setStatsLoading(false)
     }
   }
 
@@ -256,25 +285,96 @@ export default function AccountProfilePage() {
             {/* Profile Stats */}
             <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 rounded-lg bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/20 dark:to-emerald-950/20">
-                <p className="text-2xl font-bold text-teal-600">3</p>
+                {statsLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-teal-600" />
+                ) : (
+                  <p className="text-2xl font-bold text-teal-600">{userStats.totalOrders}</p>
+                )}
                 <p className="text-xs text-muted-foreground">Total Orders</p>
               </div>
               <div className="text-center p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
-                <p className="text-2xl font-bold text-blue-600">12</p>
+                {statsLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-blue-600" />
+                ) : (
+                  <p className="text-2xl font-bold text-blue-600">{userStats.wishlistCount}</p>
+                )}
                 <p className="text-xs text-muted-foreground">Wishlist Items</p>
               </div>
               <div className="text-center p-4 rounded-lg bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
-                <p className="text-2xl font-bold text-purple-600">4.8</p>
-                <p className="text-xs text-muted-foreground">Rating</p>
+                {statsLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-purple-600" />
+                ) : (
+                  <p className="text-2xl font-bold text-purple-600">
+                    {userStats.averageRating > 0 ? userStats.averageRating.toFixed(1) : "N/A"}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">Avg Rating</p>
               </div>
               <div className="text-center p-4 rounded-lg bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20">
-                <p className="text-2xl font-bold text-orange-600">2</p>
+                {statsLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-600" />
+                ) : (
+                  <p className="text-2xl font-bold text-orange-600">{userStats.reviewsCount}</p>
+                )}
                 <p className="text-xs text-muted-foreground">Reviews</p>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Additional Stats */}
+      {!statsLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                ${userStats.totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                From {userStats.completedOrders} completed orders
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Member Since</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {(session?.user as any)?.createdAt 
+                  ? new Date((session?.user as any)?.createdAt).getFullYear()
+                  : "2024"
+                }
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Active member
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Activity Score</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {Math.min(100, (userStats.totalOrders * 10) + (userStats.reviewsCount * 5) + (userStats.wishlistCount * 2))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Based on your engagement
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Profile Information */}
       <Tabs defaultValue="profile" className="w-full">
