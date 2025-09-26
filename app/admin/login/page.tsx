@@ -59,9 +59,24 @@ function AdminLoginForm() {
       <div className="relative hidden bg-gradient-to-br from-teal-600 to-emerald-700 md:block">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.15),transparent_40%),radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.15),transparent_40%)]" />
         <div className="relative flex h-full flex-col justify-between p-10 text-white">
-          <div className="flex items-center gap-2 text-2xl font-bold">
-            <span className="bg-white/10 px-2 py-1 rounded-md">Kureno</span>
-            <span className="opacity-90">Admin</span>
+          <div className="flex items-center gap-3">
+            {/* Logo Container */}
+            <div className="relative group">
+              <div className="relative p-2 rounded-lg bg-white/10 backdrop-blur-sm group-hover:bg-white/20 transition-all duration-300">
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-white/10 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <img 
+                  src="/logo.svg" 
+                  alt="Kureno Logo" 
+                  className="w-8 h-8 relative z-10 filter brightness-0 invert"
+                />
+              </div>
+            </div>
+            
+            {/* Brand Text */}
+            <div className="text-2xl font-bold">
+              <span className="text-white">Kureno</span>
+              <span className="opacity-90 ml-2">Admin</span>
+            </div>
           </div>
           <div className="max-w-md">
             <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/15">
@@ -77,12 +92,36 @@ function AdminLoginForm() {
       <div className="flex items-center justify-center px-6 py-12">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="space-y-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Lock className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">Admin Area</span>
+            {/* Logo Section */}
+            <div className="flex justify-center mb-6">
+              <div className="relative group">
+                {/* Logo Container */}
+                <div className="relative p-3 rounded-xl bg-gradient-to-br from-white to-gray-50 shadow-lg border border-gray-200/50 group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                  {/* Glow Effect */}
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-teal-400/20 to-emerald-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
+                  
+                  {/* Logo */}
+                  <img 
+                    src="/logo.svg" 
+                    alt="Kureno Logo" 
+                    className="w-12 h-12 relative z-10"
+                  />
+                </div>
+                
+                {/* Brand Text */}
+                <div className="text-center mt-3">
+                  <h1 className="text-xl font-bold text-gray-900">Kureno Admin</h1>
+                  <p className="text-xs text-teal-600 font-medium">Admin Portal</p>
+                </div>
+              </div>
             </div>
-            <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
-            <CardDescription>Sign in with an administrator account</CardDescription>
+            
+            <div className="flex items-center justify-center gap-2 text-muted-foreground mb-2">
+              <Lock className="h-4 w-4" />
+              <span className="text-xs font-medium uppercase tracking-wide">Secure Access</span>
+            </div>
+            <CardTitle className="text-2xl font-bold text-center">Admin Login</CardTitle>
+            <CardDescription className="text-center">Sign in with an administrator account</CardDescription>
           </CardHeader>
           <CardContent>
             {error && (

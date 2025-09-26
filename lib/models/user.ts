@@ -33,6 +33,8 @@ export interface IUser extends mongoose.Document {
   }
   lastLogin?: Date
   isActive: boolean
+  resetPasswordToken?: string
+  resetPasswordExpires?: Date
   createdAt: Date
   updatedAt: Date
   comparePassword(candidatePassword: string): Promise<boolean>
@@ -61,7 +63,7 @@ const permissionsSchema = new mongoose.Schema(
   { _id: false },
 )
 
-const userSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema<IUser>(
   {
     name: {
       type: String,
@@ -89,35 +91,14 @@ const userSchema = new mongoose.Schema(
     },
     permissions: {
       type: permissionsSchema,
-      default: function () {
-        if (this.role === "admin") {
-          return {
-            canManageProducts: true,
-            canManageOrders: true,
-            canManageUsers: true,
-            canManageContent: true,
-            canViewAnalytics: true,
-            canManageSettings: true,
-          }
-        } else if (this.role === "manager") {
-          return {
-            canManageProducts: true,
-            canManageOrders: true,
-            canManageUsers: false,
-            canManageContent: true,
-            canViewAnalytics: true,
-            canManageSettings: false,
-          }
-        }
-        return {
-          canManageProducts: false,
-          canManageOrders: false,
-          canManageUsers: false,
-          canManageContent: false,
-          canViewAnalytics: false,
-          canManageSettings: false,
-        }
-      },
+      default: () => ({
+        canManageProducts: false,
+        canManageOrders: false,
+        canManageUsers: false,
+        canManageContent: false,
+        canViewAnalytics: false,
+        canManageSettings: false,
+      }),
     },
     phone: {
       type: String,
@@ -144,6 +125,14 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      select: false,
     },
   },
   { timestamps: true },

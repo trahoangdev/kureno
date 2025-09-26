@@ -127,6 +127,7 @@ import {
   Rabbit,
   Turtle
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -135,6 +136,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useDynamicBadges } from "./dynamic-badges"
+import NotificationsDropdown from "./components/notifications-dropdown"
+import RefreshButton from "./components/refresh-button"
+import ExportImportDialog from "./components/export-import-dialog"
 // Removed Sidebar components - using custom implementation
 
 const adminRoutes = [
@@ -147,6 +151,13 @@ const adminRoutes = [
     icon: LayoutDashboard,
         badge: null,
         description: "Overview and analytics"
+      },
+      {
+        href: "/admin/notifications",
+        label: "Notifications",
+        icon: Bell,
+        badge: null, // Will be updated by dynamic badges
+        description: "Manage system notifications"
       },
     ]
   },
@@ -329,177 +340,234 @@ export default function AdminLayout({
     <div className="min-h-screen bg-background">
       {/* Sidebar - Fixed Position with Toggle */}
       <div className={`fixed left-0 top-0 z-40 h-screen border-r border-border/50 bg-gradient-to-b from-slate-50/95 to-gray-50/95 dark:from-slate-950/95 dark:to-gray-950/95 backdrop-blur-md transition-all duration-300 ease-in-out flex flex-col ${
-        sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'
+        sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'
       }`}>
-        {/* Enhanced Header */}
-        <div className="border-b border-border/50 bg-gradient-to-r from-slate-100/95 to-gray-100/95 dark:from-slate-900/95 dark:to-gray-900/95 backdrop-blur-sm p-4">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-lg blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-200"></div>
-              <Link href="/admin" className="relative flex items-center gap-3 p-2 rounded-lg bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-white/30 dark:border-slate-700/30 shadow-sm">
-                <img src="/logo.svg" alt="Kureno" className="h-8 w-8" />
-                <div>
-                  <span className="font-bold text-lg bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">Admin</span>
-                  <div className="text-xs text-muted-foreground">Control Panel</div>
-                </div>
-              </Link>
+        {/* Enhanced Admin Header */}
+        <div className="border-b border-border/50 bg-gradient-to-r from-slate-100/95 to-gray-100/95 dark:from-slate-900/95 dark:to-gray-900/95 backdrop-blur-sm p-6">
+          <Link href="/admin" className="group flex items-center gap-3">
+            <div className="relative w-14 h-14 rounded-xl bg-white dark:bg-gray-900 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 border border-border/20 overflow-hidden">
+              <div className="absolute -inset-1 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              <img 
+                src="/logo.svg" 
+                alt="Kureno Admin" 
+                className="w-9 h-9 transition-transform duration-300 group-hover:scale-110 relative z-10"
+              />
             </div>
-          </div>
-          
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold bg-gradient-to-r from-teal-500 to-emerald-600 bg-clip-text text-transparent leading-none">
+                  Kureno
+                </span>
+                <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs px-2 py-0.5 font-medium">
+                  ADMIN
+                </Badge>
+              </div>
+              <span className="text-sm text-muted-foreground font-medium tracking-wide leading-none">
+                Control Panel
+              </span>
+            </div>
+            </Link>
         </div>
 
-        <div className="p-2 flex-1 overflow-y-auto">
-
-          {/* Back to Site Button */}
-          <div className="mb-6 px-2">
-            <Link href="/" className="flex items-center gap-3 w-full p-2 rounded-lg bg-gradient-to-r from-blue-500/15 to-indigo-500/15 hover:from-blue-500/25 hover:to-indigo-500/25 border border-blue-200/60 dark:border-blue-800/60 transition-all duration-200 shadow-sm">
-              <div className="p-1 rounded-md bg-blue-500/20">
-                <Home className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        {/* Enhanced Navigation - Mobile Menu Style */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Back to Site Button - Enhanced */}
+          <div className="p-8 border-b border-border/50">
+            <Link href="/" className="group flex items-center gap-4 px-4 py-3 rounded-xl font-medium transition-all duration-300 hover:translate-x-1 bg-gradient-to-r from-blue-500/10 to-indigo-600/10 text-primary border border-blue-200/30 hover:border-blue-300/50 shadow-sm">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg" />
+              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-600/20">
+                <Home className="h-4 w-4 text-blue-600 dark:text-blue-400 transition-all duration-300" />
               </div>
-              <div className="text-left">
-                <div className="font-medium text-blue-700 dark:text-blue-300">Back to Site</div>
-                <div className="text-xs text-blue-600/70 dark:text-blue-400/70">Return to main website</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-blue-700 dark:text-blue-300">Back to Site</span>
+                </div>
+                <div className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-0.5 truncate">
+                  Return to main website
+                </div>
               </div>
-            </Link>
+              <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 animate-pulse" />
+                  </Link>
           </div>
 
-          {/* Navigation Categories */}
-          <div className="space-y-4">
-            {filteredRoutes.map((category) => (
-              <div key={category.category} className="space-y-2">
-                <Collapsible
-                  open={expandedCategories.includes(category.category)}
-                  onOpenChange={() => toggleCategory(category.category)}
-                >
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-2 h-auto bg-white/80 dark:bg-slate-800/80 hover:bg-white/90 dark:hover:bg-slate-800/90 border border-white/40 dark:border-slate-700/40 shadow-sm"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="p-1 rounded-md bg-slate-500/20">
-                          {category.category === "Overview" && <LayoutDashboard className="h-4 w-4 text-slate-600 dark:text-slate-400" />}
-                          {category.category === "Content Management" && <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
-                          {category.category === "Customer Management" && <Users className="h-4 w-4 text-green-600 dark:text-green-400" />}
-                          {category.category === "System Administration" && <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />}
-                          {category.category === "API & Settings" && <Settings className="h-4 w-4 text-orange-600 dark:text-orange-400" />}
-                        </div>
-                        <span className="font-medium text-sm">{category.category}</span>
-                      </div>
-                      {expandedCategories.includes(category.category) ? (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          {/* Enhanced Navigation Categories - Mobile Menu Style */}
+          <nav className="p-8 space-y-6">
+            {filteredRoutes.map((category, categoryIndex) => (
+              <div key={category.category} className="space-y-3">
+                {/* Category Header */}
+                <div className="flex items-center gap-2 px-2">
+                  <div className={`w-1 h-4 rounded-full ${
+                    category.category === "Overview" ? "bg-gradient-to-b from-gray-500 to-slate-600" :
+                    category.category === "Content Management" ? "bg-gradient-to-b from-blue-500 to-blue-600" :
+                    category.category === "Customer Management" ? "bg-gradient-to-b from-green-500 to-emerald-600" :
+                    category.category === "System Administration" ? "bg-gradient-to-b from-purple-500 to-purple-600" :
+                    "bg-gradient-to-b from-orange-500 to-orange-600"
+                  }`} />
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {category.category}
+                  </h3>
+                </div>
+                
+                {/* Category Items */}
+                <div className="space-y-2">
+                  {category.items.map((item, itemIndex) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "group flex items-center gap-4 px-4 py-3 rounded-xl font-medium transition-all duration-300 hover:translate-x-1",
+                        pathname === item.href
+                          ? "bg-gradient-to-r from-teal-500/10 to-emerald-600/10 text-primary border border-primary/20 shadow-sm"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                       )}
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-2 ml-4 mt-2">
-                    {category.items.map((item) => (
-                      <div key={item.href}>
-                        <Link 
-                          href={item.href} 
-                          className={`flex items-center gap-3 w-full p-2 rounded-lg transition-all duration-200 ${
-                            pathname === item.href
-                              ? 'bg-gradient-to-r from-teal-500/25 to-emerald-500/25 border border-teal-200/60 dark:border-teal-800/60 shadow-sm'
-                              : 'bg-white/70 dark:bg-slate-800/70 hover:bg-white/85 dark:hover:bg-slate-800/85 border border-white/30 dark:border-slate-700/30 shadow-sm'
-                          }`}
-                        >
-                          <div className={`p-1.5 rounded-md ${
-                            pathname === item.href 
-                              ? 'bg-teal-500/30' 
-                              : 'bg-slate-500/20'
-                          }`}>
-                            <item.icon className={`h-4 w-4 ${
-                              pathname === item.href 
-                                ? 'text-teal-600 dark:text-teal-400' 
-                                : 'text-slate-600 dark:text-slate-400'
-                            }`} />
-                          </div>
-                          <div className="flex-1 text-left">
-                            <div className="flex items-center gap-2">
-                              <span className={`font-medium text-sm ${
-                                pathname === item.href 
-                                  ? 'text-teal-700 dark:text-teal-300' 
-                                  : 'text-slate-700 dark:text-slate-300'
-                              }`}>
-                                {item.label}
-                              </span>
-                              {item.badge && (
-                                <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-slate-200/80 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300">
-                                  {item.badge}
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {item.description}
-                            </div>
-                          </div>
-                  </Link>
+                      style={{
+                        animationDelay: `${(categoryIndex * 50) + (itemIndex * 25)}ms`
+                      }}
+                    >
+                      {/* Active Indicator */}
+                      <div className={cn(
+                        "w-2 h-2 rounded-full transition-all duration-300",
+                        pathname === item.href
+                          ? "bg-gradient-to-r from-teal-500 to-emerald-600 shadow-lg"
+                          : "bg-muted-foreground/30 group-hover:bg-primary/50"
+                      )} />
+                      
+                      {/* Icon */}
+                      <div className={cn(
+                        "p-2 rounded-lg transition-all duration-300",
+                        pathname === item.href
+                          ? "bg-gradient-to-br from-teal-500/20 to-emerald-600/20"
+                          : "bg-muted/30 group-hover:bg-muted/50"
+                      )}>
+                        <item.icon className={cn(
+                          "h-4 w-4 transition-all duration-300",
+                          pathname === item.href
+                            ? "text-teal-600 dark:text-teal-400"
+                            : "text-muted-foreground group-hover:text-primary"
+                        )} />
                       </div>
-                    ))}
-                  </CollapsibleContent>
-                </Collapsible>
+                      
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate">{item.label}</span>
+                          {item.badge && (
+                            <Badge 
+                              variant="secondary" 
+                              className={cn(
+                                "text-xs px-1.5 py-0.5 transition-all duration-300",
+                                pathname === item.href
+                                  ? "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
+                                  : "bg-muted text-muted-foreground"
+                              )}
+                            >
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </div>
+                        {item.description && (
+                          <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                            {item.description}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Active Pulse */}
+                      {pathname === item.href && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-teal-500 to-emerald-600 animate-pulse" />
+                      )}
+                    </Link>
+                  ))}
+                </div>
               </div>
             ))}
-          </div>
+          </nav>
 
-          {/* Quick Actions */}
-          <div className="mt-8 px-2">
-            <Separator className="mb-4 bg-border/50" />
-            <div className="space-y-3">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Quick Actions</h4>
+          {/* Enhanced Quick Actions - Mobile Menu Style */}
+          <div className="px-8 py-4 border-t border-border/50">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-4 bg-gradient-to-b from-purple-500 to-pink-600 rounded-full" />
+                <span className="text-sm font-medium text-muted-foreground">Quick Actions</span>
+              </div>
               <div className="grid grid-cols-2 gap-3">
-                <Button size="sm" variant="outline" className="h-8 text-xs bg-white/80 dark:bg-slate-800/80 border-white/40 dark:border-slate-700/40 shadow-sm">
-                  <Plus className="h-3 w-3 mr-1" />
-                  New
-                </Button>
-                <Button size="sm" variant="outline" className="h-8 text-xs bg-white/80 dark:bg-slate-800/80 border-white/40 dark:border-slate-700/40 shadow-sm">
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Refresh
-                </Button>
+                <ExportImportDialog
+                  trigger={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-12 w-full relative group rounded-xl hover:bg-muted/50 transition-all duration-300 hover:scale-105 border-border/50"
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <Plus className="h-4 w-4 group-hover:text-primary transition-colors" />
+                        <span className="text-xs">Export/Import</span>
+                      </div>
+                    </Button>
+                  }
+                />
+                
+                <RefreshButton
+                  variant="outline"
+                  size="sm" 
+                  className="h-12 w-full relative group rounded-xl hover:bg-muted/50 transition-all duration-300 hover:scale-105 border-border/50"
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xs">Refresh</span>
+                  </div>
+                </RefreshButton>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Enhanced Footer */}
-        <div className="border-t border-border/50 bg-gradient-to-r from-slate-100/95 to-gray-100/95 dark:from-slate-900/95 dark:to-gray-900/95 backdrop-blur-sm p-4 mt-auto">
-          <div className="space-y-4">
-            {/* User Profile */}
-            <div className="flex items-center gap-3 p-2 rounded-lg bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-white/40 dark:border-slate-700/40 shadow-sm">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={session?.user?.image || undefined} />
-                <AvatarFallback className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white text-sm font-semibold">
-                  {(session?.user?.name?.[0] || session?.user?.email?.[0] || "A").toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">
-                  {session?.user?.name || "Admin User"}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {session?.user?.email || "admin@kureno.com"}
+        {/* Enhanced User Section - Mobile Menu Style */}
+        <div className="border-t border-border/50 bg-gradient-to-b from-background/50 to-muted/20 mt-auto">
+          <div className="p-8">
+            <div className="space-y-4">
+              {/* User Profile Card */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/10 border border-border/50">
+                <Avatar className="h-12 w-12 ring-2 ring-primary/20 ring-offset-2 ring-offset-background">
+                  <AvatarImage src={session?.user?.image || undefined} />
+                  <AvatarFallback className="bg-gradient-to-br from-teal-500 to-emerald-600 text-white font-semibold">
+                    {(session?.user?.name?.[0] || session?.user?.email?.[0] || "A").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground truncate">
+                    {session?.user?.name || "Admin User"}
+                  </p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {session?.user?.email || "admin@kureno.com"}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-xs text-green-600 dark:text-green-400 font-medium">Online</span>
+                  </div>
                 </div>
               </div>
-              <Badge variant="secondary" className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-                Online
-              </Badge>
+              
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <Link href="/admin/settings/account">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start h-12 rounded-xl border-border/50 hover:bg-muted/50 hover:border-primary/30 transition-all duration-300 group"
+                  >
+                    <User className="mr-3 h-4 w-4 group-hover:text-primary transition-colors" />
+                    Account Settings
+                  </Button>
+                </Link>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start h-12 rounded-xl text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:hover:bg-red-950 transition-all duration-300 group"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                >
+                  <LogOut className="mr-3 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                  Sign Out
+                </Button>
+              </div>
             </div>
-
-            {/* Logout Button */}
-            <button 
-              onClick={() => signOut({ callbackUrl: "/" })} 
-              className="flex items-center gap-3 w-full p-2 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-200/60 dark:border-red-800/60 transition-all duration-200 shadow-sm"
-            >
-              <div className="p-1 rounded-md bg-red-500/20">
-                <LogOut className="h-4 w-4 text-red-600 dark:text-red-400" />
-              </div>
-              <div className="text-left">
-                <div className="font-medium text-sm text-red-700 dark:text-red-300">Sign Out</div>
-                <div className="text-xs text-red-600/70 dark:text-red-400/70">End current session</div>
-              </div>
-                  </button>
           </div>
         </div>
       </div>
@@ -508,7 +576,7 @@ export default function AdminLayout({
       <div className="min-h-screen">
         {/* Enhanced Fixed Header */}
         <header className={`fixed top-0 right-0 z-50 h-16 bg-gradient-to-r from-slate-50/95 via-gray-50/95 to-zinc-50/95 dark:from-slate-950/95 dark:via-gray-950/95 dark:to-zinc-950/95 backdrop-blur-md border-b border-border/50 shadow-sm transition-all duration-300 ease-in-out ${
-          sidebarOpen ? 'left-64' : 'left-0'
+          sidebarOpen ? 'left-80' : 'left-0'
         }`}>
           <div className="flex h-full items-center justify-between px-4 sm:px-6 lg:px-8">
             {/* Left Section */}
@@ -534,6 +602,7 @@ export default function AdminLayout({
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium text-foreground">
                   {pathname === "/admin" && "Dashboard"}
+                  {pathname === "/admin/notifications" && "Notifications"}
                   {pathname === "/admin/products" && "Products"}
                   {pathname === "/admin/categories" && "Categories"}
                   {pathname === "/admin/orders" && "Orders"}
@@ -555,14 +624,8 @@ export default function AdminLayout({
             <div className="flex items-center gap-2">
               {/* Quick Actions */}
               <div className="hidden sm:flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-800/60 border border-white/20 dark:border-slate-700/20">
-                  <Bell className="h-4 w-4" />
-                  <span className="sr-only">Notifications</span>
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-800/60 border border-white/20 dark:border-slate-700/20">
-                  <RefreshCw className="h-4 w-4" />
-                  <span className="sr-only">Refresh</span>
-                </Button>
+                <NotificationsDropdown />
+                <RefreshButton />
                 <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0 rounded-lg bg-white/40 dark:bg-slate-800/40 hover:bg-white/60 dark:hover:bg-slate-800/60 border border-white/20 dark:border-slate-700/20">
                 <Link href="/admin/settings">
                     <Settings className="h-4 w-4" />
@@ -663,7 +726,7 @@ export default function AdminLayout({
         <main className="pt-16 min-h-screen">
           <div className="p-4 sm:p-6 md:p-8">{children}</div>
         </main>
+        </div>
       </div>
-    </div>
   )
 }
