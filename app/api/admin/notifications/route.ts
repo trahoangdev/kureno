@@ -120,7 +120,6 @@ export async function GET(request: NextRequest) {
         .sort({ priority: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .populate("relatedEntity.id", "name title _id")
         .lean(), // Use lean() for better performance when we don't need mongoose documents
       
       AdminNotification.countDocuments(query),

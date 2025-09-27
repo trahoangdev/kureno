@@ -61,6 +61,7 @@ export interface IProduct extends mongoose.Document, IProductMethods {
   saleStartDate?: Date
   saleEndDate?: Date
   images: string[]
+  videos?: string[]
   category: string
   stock: number
   featured: boolean
@@ -173,6 +174,18 @@ const productSchema = new mongoose.Schema(
             return images && images.length > 0 && images.length <= 10;
           },
           message: "Product must have between 1 and 10 images"
+        }
+      ]
+    },
+    videos: {
+      type: [String],
+      default: [],
+      validate: [
+        {
+          validator: function(videos: string[]) {
+            return !videos || videos.length <= 5;
+          },
+          message: "Product cannot have more than 5 videos"
         }
       ]
     },

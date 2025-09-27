@@ -1,12 +1,25 @@
 import { v2 as cloudinary } from 'cloudinary'
 
 // Configure Cloudinary
-cloudinary.config({
+const cloudinaryConfig = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: process.env.CLOUDINARY_SECURE === 'true',
+}
+
+console.log('Cloudinary config check:', {
+  cloud_name: !!cloudinaryConfig.cloud_name,
+  api_key: !!cloudinaryConfig.api_key,
+  api_secret: !!cloudinaryConfig.api_secret,
 })
+
+if (!cloudinaryConfig.cloud_name || !cloudinaryConfig.api_key || !cloudinaryConfig.api_secret) {
+  console.error('Missing Cloudinary configuration. Please check your environment variables.')
+  console.error('Required variables: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET')
+}
+
+cloudinary.config(cloudinaryConfig)
 
 // Types for upload options
 export interface CloudinaryUploadOptions {
@@ -60,8 +73,13 @@ export const CloudinaryUtils = {
     options: CloudinaryUploadOptions = {}
   ): Promise<CloudinaryUploadResult> {
     try {
+      // Check if Cloudinary is configured
+      if (!cloudinaryConfig.cloud_name || !cloudinaryConfig.api_key || !cloudinaryConfig.api_secret) {
+        throw new Error('Cloudinary is not properly configured. Please check your environment variables.')
+      }
+
       const uploadOptions = {
-        folder: options.folder || process.env.CLOUDINARY_FOLDER_GENERAL,
+        folder: options.folder || process.env.CLOUDINARY_FOLDER_GENERAL || 'kureno/general',
         public_id: options.publicId,
         resource_type: options.resourceType || 'auto',
         transformation: options.transformation,
@@ -77,10 +95,23 @@ export const CloudinaryUtils = {
         overwrite: true,
       }
 
-      const result = await cloudinary.uploader.upload(file as string, uploadOptions)
+      console.log('Uploading to Cloudinary with options:', uploadOptions)
+
+      // Convert Buffer to base64 data URL with proper MIME type
+      let uploadData: string
+      if (Buffer.isBuffer(file)) {
+        // Determine MIME type from file extension or use default
+        const mimeType = options.resourceType === 'video' ? 'video/mp4' : 'image/png'
+        uploadData = `data:${mimeType};base64,${file.toString('base64')}`
+      } else {
+        uploadData = file
+      }
+
+      const result = await cloudinary.uploader.upload(uploadData, uploadOptions)
+      console.log('Cloudinary upload result:', result.public_id)
       return result as CloudinaryUploadResult
     } catch (error) {
-      console.error('Cloudinary upload error:', error)
+      console.error('Cloudinary upload error details:', error)
       throw error as CloudinaryError
     }
   },

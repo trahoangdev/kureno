@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -255,6 +255,75 @@ export default function NewBlogPostPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
+  // Callback functions for Cloudinary uploads
+  const handleCoverImageUpload = useCallback((files: CloudinaryFile[]) => {
+    if (files.length > 0) {
+      setFormData(prev => ({ ...prev, coverImage: files[0].secureUrl }))
+      setHasUnsavedChanges(true)
+    }
+  }, [])
+
+  const handleImagesUpload = useCallback((files: CloudinaryFile[]) => {
+    const urls = files.map(file => file.secureUrl)
+    setFormData(prev => ({ ...prev, images: urls }))
+    setHasUnsavedChanges(true)
+  }, [])
+
+  const handleVideosUpload = useCallback((videos: CloudinaryVideo[]) => {
+    const urls = videos.map(video => video.secureUrl)
+    setFormData(prev => ({ ...prev, videos: urls }))
+    setHasUnsavedChanges(true)
+  }, [])
+
+  // Helper function to generate unique slug
+  const generateUniqueSlug = useCallback((baseSlug: string) => {
+    return `${baseSlug}-${Date.now()}`
+  }, [])
+
+  // Helper function to handle slug conflict
+  const handleSlugConflict = useCallback(async (postData: any, isDraft: boolean = false) => {
+    const uniqueSlug = generateUniqueSlug(formData.slug)
+    setFormData(prev => ({ ...prev, slug: uniqueSlug }))
+    
+    toast({
+      title: "Slug Conflict",
+      description: `Slug already exists. Using unique slug: ${uniqueSlug}`,
+      variant: "destructive",
+    })
+    
+    // Retry with new slug
+    const retryPostData = { ...postData, slug: uniqueSlug }
+    const retryResponse = await fetch("/api/blog", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(retryPostData),
+    })
+    
+    if (retryResponse.ok) {
+      const successMessage = isDraft 
+        ? "Your blog post draft has been saved with a unique slug."
+        : "Your blog post has been successfully created with a unique slug."
+      
+      toast({
+        title: isDraft ? "Draft Saved" : "Blog Post Created",
+        description: successMessage,
+      })
+      
+      setHasUnsavedChanges(false)
+      
+      if (!isDraft) {
+        router.push("/admin/blog")
+        router.refresh()
+      }
+      
+      return true
+    }
+    
+    return false
+  }, [formData.slug, generateUniqueSlug, router])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -386,7 +455,9 @@ export default function NewBlogPostPage() {
         wordCount: formData.wordCount,
         // Media fields
         images: formData.images,
-        videos: formData.videos
+        videos: formData.videos,
+        // Ensure coverImage is provided or use placeholder
+        coverImage: formData.coverImage || "https://via.placeholder.com/1200x630?text=No+Cover+Image"
       }
 
       const response = await fetch("/api/blog", {
@@ -397,20 +468,27 @@ export default function NewBlogPostPage() {
         body: JSON.stringify(postData),
       })
 
-      const data = await response.json()
+      if (response.ok) {
+        toast({
+          title: "Blog Post Created",
+          description: "Your blog post has been successfully created.",
+        })
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create blog post")
+        setHasUnsavedChanges(false)
+        router.push("/admin/blog")
+        router.refresh()
+      } else {
+        const errorData = await response.json()
+        
+        if (response.status === 409 && errorData.error === "Slug already exists") {
+          const success = await handleSlugConflict(postData, false)
+          if (!success) {
+            throw new Error("Failed to create blog post even with unique slug")
+          }
+        } else {
+          throw new Error(errorData.error || "Failed to create blog post")
+        }
       }
-
-      toast({
-        title: "Blog Post Created",
-        description: "Your blog post has been successfully created.",
-      })
-
-      setHasUnsavedChanges(false)
-      router.push("/admin/blog")
-      router.refresh()
     } catch (error: any) {
       setError(error.message || "Something went wrong. Please try again.")
       toast({
@@ -425,6 +503,17 @@ export default function NewBlogPostPage() {
   const handleSaveDraft = async () => {
     setIsLoading(true)
     try {
+      // Validate required fields
+      if (!formData.title || !formData.slug || !formData.content || !formData.excerpt) {
+        toast({
+          title: "Missing Required Fields",
+          description: "Please fill in title, slug, content, and excerpt before saving.",
+          variant: "destructive",
+        })
+        setIsLoading(false)
+        return
+      }
+
       const postData = {
         ...formData,
         status: "draft",
@@ -438,7 +527,9 @@ export default function NewBlogPostPage() {
         wordCount: formData.wordCount,
         // Media fields
         images: formData.images,
-        videos: formData.videos
+        videos: formData.videos,
+        // Ensure coverImage is provided or use placeholder
+        coverImage: formData.coverImage || "https://via.placeholder.com/1200x630?text=No+Cover+Image"
       }
 
       const response = await fetch("/api/blog", {
@@ -455,6 +546,18 @@ export default function NewBlogPostPage() {
           description: "Your blog post draft has been saved.",
         })
         setHasUnsavedChanges(false)
+      } else {
+        const errorData = await response.json()
+        
+        if (response.status === 409 && errorData.error === "Slug already exists") {
+          await handleSlugConflict(postData, true)
+        } else {
+          toast({
+            title: "Error",
+            description: errorData.error || "Failed to save draft",
+            variant: "destructive",
+          })
+        }
       }
     } catch (error) {
       toast({
@@ -759,12 +862,7 @@ export default function NewBlogPostPage() {
                     
                     <TabsContent value="cloudinary">
                       <CloudinaryUpload
-                        onUpload={(files: CloudinaryFile[]) => {
-                          if (files.length > 0) {
-                            setFormData(prev => ({ ...prev, coverImage: files[0].secureUrl }))
-                            setHasUnsavedChanges(true)
-                          }
-                        }}
+                        onUpload={handleCoverImageUpload}
                         maxFiles={1}
                         maxFileSize={10}
                         acceptedTypes={['image']}
@@ -820,11 +918,7 @@ export default function NewBlogPostPage() {
                 </CardHeader>
                 <CardContent>
                   <CloudinaryUpload
-                    onUpload={(files: CloudinaryFile[]) => {
-                      const urls = files.map(file => file.secureUrl)
-                      setFormData(prev => ({ ...prev, images: urls }))
-                      setHasUnsavedChanges(true)
-                    }}
+                    onUpload={handleImagesUpload}
                     maxFiles={20}
                     maxFileSize={10}
                     acceptedTypes={['image']}
@@ -849,11 +943,7 @@ export default function NewBlogPostPage() {
                 </CardHeader>
                 <CardContent>
                   <CloudinaryVideoUpload
-                    onUpload={(videos: CloudinaryVideo[]) => {
-                      const urls = videos.map(video => video.secureUrl)
-                      setFormData(prev => ({ ...prev, videos: urls }))
-                      setHasUnsavedChanges(true)
-                    }}
+                    onUpload={handleVideosUpload}
                     maxFiles={5}
                     maxFileSize={100}
                     folder="blog"

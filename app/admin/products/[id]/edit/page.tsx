@@ -19,6 +19,7 @@ import {
   Save, 
   Package, 
   Image as ImageIcon, 
+  Video,
   Settings, 
   Globe, 
   Palette,
@@ -35,9 +36,12 @@ import {
   Type,
   FileCode,
   Zap,
-  Activity
+  Activity,
+  TrendingUp
 } from "lucide-react"
 import ImageUpload from "../../image-upload"
+import CloudinaryImageUpload from "../../cloudinary-image-upload"
+import CloudinaryVideoUploadComponent from "../../cloudinary-video-upload"
 import ProductVariants from "../../product-variants"
 import { useToast } from "@/hooks/use-toast"
 
@@ -54,10 +58,16 @@ export default function EditProductPage() {
     name: "",
     description: "",
     price: "",
+    originalPrice: "",
+    salePrice: "",
+    onSale: false,
+    saleStartDate: "",
+    saleEndDate: "",
     category: "",
     stock: "",
     featured: false,
     images: [""] as string[],
+    videos: [] as string[],
     // Advanced fields
     sku: "",
     weight: "",
@@ -97,11 +107,17 @@ export default function EditProductPage() {
       setForm({
         name: p.name || "",
         description: p.description || "",
-        price: String(p.price ?? ""),
+        price: String(p.onSale ? (p.originalPrice ?? p.price) : p.price ?? ""),
+        originalPrice: String(p.originalPrice ?? ""),
+        salePrice: String(p.onSale ? p.price : ""),
+        onSale: !!p.onSale,
+        saleStartDate: p.saleStartDate || "",
+        saleEndDate: p.saleEndDate || "",
         category: p.category || "",
         stock: String(p.stock ?? ""),
         featured: !!p.featured,
         images: p.images?.length ? p.images : [""],
+        videos: p.videos?.length ? p.videos : [],
         // Advanced fields
         sku: p.sku || "",
         weight: String(p.weight ?? ""),
@@ -150,6 +166,11 @@ export default function EditProductPage() {
     updateField("category", value)
   }
 
+  const handleSwitchChange = (key: string, checked: boolean) => {
+    setForm((f) => ({ ...f, [key]: checked }))
+    setHasUnsavedChanges(true)
+  }
+
   // Auto-save functionality
   useEffect(() => {
     if (hasUnsavedChanges && form.name) {
@@ -187,11 +208,16 @@ export default function EditProductPage() {
     const payload = {
       name: form.name.trim(),
       description: form.description.trim(),
-      price: Number(form.price),
+      price: form.onSale ? Number(form.salePrice) : Number(form.price),
+      originalPrice: form.onSale && form.originalPrice ? Number(form.originalPrice) : undefined,
+      onSale: form.onSale,
+      saleStartDate: form.saleStartDate || null,
+      saleEndDate: form.saleEndDate || null,
       category: form.category.trim(),
       stock: Number(form.stock),
       featured: form.featured,
       images: form.images.map((s) => s.trim()).filter(Boolean),
+      videos: form.videos.map((s) => s.trim()).filter(Boolean),
       // Advanced fields
       sku: form.sku.trim(),
       weight: Number(form.weight) || 0,
@@ -300,7 +326,7 @@ export default function EditProductPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="relative z-10 mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="relative z-10 mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
           <Card className="bg-white/10 text-white backdrop-blur-sm border-white/20">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -327,10 +353,10 @@ export default function EditProductPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-200">Category</p>
-                  <p className="text-xl font-bold">{form.category ? "Selected" : "None"}</p>
+                  <p className="text-sm text-slate-200">Description</p>
+                  <p className="text-xl font-bold">{form.description.length} chars</p>
                 </div>
-                <Tag className="h-6 w-6 text-purple-300" />
+                <Type className="h-6 w-6 text-purple-300" />
               </div>
             </CardContent>
           </Card>
@@ -342,6 +368,28 @@ export default function EditProductPage() {
                   <p className="text-xl font-bold">{isAutoSaving ? "Saving..." : "Ready"}</p>
                 </div>
                 {isAutoSaving ? <Loader2 className="h-6 w-6 animate-spin text-yellow-300" /> : <Save className="h-6 w-6 text-green-300" />}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/10 text-white backdrop-blur-sm border-white/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-200">Price</p>
+                  <p className="text-xl font-bold">${form.onSale ? form.salePrice : form.price || "0"}</p>
+                </div>
+                <DollarSign className="h-6 w-6 text-green-300" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/10 text-white backdrop-blur-sm border-white/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-200">Videos</p>
+                  <p className="text-xl font-bold">{form.videos.filter(video => video.trim()).length}</p>
+                </div>
+                <Video className="h-6 w-6 text-purple-300" />
               </div>
             </CardContent>
           </Card>
@@ -504,6 +552,153 @@ export default function EditProductPage() {
                     </div>
                   </div>
 
+                  {/* Sales Pricing Section */}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border border-orange-200/50 dark:border-orange-800/50">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      <div>
+                        <Label htmlFor="onSale" className="text-base font-medium">On Sale</Label>
+                        <p className="text-sm text-muted-foreground">Enable special pricing for this product</p>
+                      </div>
+                    </div>
+                    <Switch id="onSale" checked={form.onSale} onCheckedChange={(checked) => handleSwitchChange("onSale", checked)} />
+                  </div>
+
+                  {/* Pricing Section */}
+                  {form.onSale ? (
+                    // Sale Pricing Layout
+                    <div className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="originalPrice" className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" />
+                            Original Price ($) *
+                          </Label>
+                          <Input
+                            id="originalPrice"
+                            name="originalPrice"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={form.originalPrice}
+                            onChange={(e) => updateField("originalPrice", e.target.value)}
+                            placeholder="0.00"
+                            className="bg-white/50 dark:bg-slate-800/50"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="salePrice" className="flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4" />
+                            Sale Price ($) *
+                          </Label>
+                          <Input
+                            id="salePrice"
+                            name="salePrice"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={form.salePrice}
+                            onChange={(e) => updateField("salePrice", e.target.value)}
+                            placeholder="0.00"
+                            className="bg-white/50 dark:bg-slate-800/50 border-red-200 focus:border-red-500"
+                            required
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="saleStartDate">Sale Start Date</Label>
+                          <Input
+                            id="saleStartDate"
+                            name="saleStartDate"
+                            type="datetime-local"
+                            value={form.saleStartDate}
+                            onChange={(e) => updateField("saleStartDate", e.target.value)}
+                            className="bg-white/50 dark:bg-slate-800/50"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="saleEndDate">Sale End Date</Label>
+                          <Input
+                            id="saleEndDate"
+                            name="saleEndDate"
+                            type="datetime-local"
+                            value={form.saleEndDate}
+                            onChange={(e) => updateField("saleEndDate", e.target.value)}
+                            className="bg-white/50 dark:bg-slate-800/50"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Discount Calculation */}
+                      {form.originalPrice && form.salePrice && (
+                        <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+                          <div className="flex items-center gap-2 mb-2">
+                            <TrendingUp className="h-4 w-4 text-green-600" />
+                            <span className="font-medium text-green-800 dark:text-green-200">Discount Calculation</span>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>Original Price:</span>
+                              <span>${parseFloat(form.originalPrice).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Sale Price:</span>
+                              <span className="text-red-600 font-medium">${parseFloat(form.salePrice).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between font-medium text-green-600">
+                              <span>You Save:</span>
+                              <span>${(parseFloat(form.originalPrice) - parseFloat(form.salePrice)).toFixed(2)} ({Math.round(((parseFloat(form.originalPrice) - parseFloat(form.salePrice)) / parseFloat(form.originalPrice)) * 100)}% off)</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Regular Pricing Layout
+                    <div className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="price" className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" />
+                            Regular Price ($) *
+                          </Label>
+                          <Input
+                            id="price"
+                            name="price"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={form.price}
+                            onChange={(e) => updateField("price", e.target.value)}
+                            placeholder="0.00"
+                            className="bg-white/50 dark:bg-slate-800/50"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="stock" className="flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            Stock Quantity *
+                          </Label>
+                          <Input
+                            id="stock"
+                            name="stock"
+                            type="number"
+                            min="0"
+                            value={form.stock}
+                            onChange={(e) => updateField("stock", e.target.value)}
+                            placeholder="0"
+                            className="bg-white/50 dark:bg-slate-800/50"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200/50 dark:border-blue-800/50">
                     <div className="flex items-center gap-3">
                       <Star className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -526,13 +721,23 @@ export default function EditProductPage() {
                     <ImageIcon className="h-5 w-5" />
                     Product Images
                   </CardTitle>
-                  <CardDescription>Upload and manage product images. Drag and drop supported.</CardDescription>
+                  <CardDescription>Upload images to Cloudinary for optimized delivery and performance, or use manual URLs.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <ImageUpload
+                <CardContent className="space-y-6">
+                  <CloudinaryImageUpload
                     images={form.images}
                     onImagesChange={(images) => updateField("images", images)}
                     maxImages={10}
+                    folder="products"
+                  />
+                  
+                  <Separator />
+                  
+                  <CloudinaryVideoUploadComponent
+                    videos={form.videos}
+                    onVideosChange={(videos) => updateField("videos", videos)}
+                    maxVideos={5}
+                    folder="products/videos"
                   />
                 </CardContent>
               </Card>

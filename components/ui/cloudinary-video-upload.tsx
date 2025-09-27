@@ -119,7 +119,19 @@ export default function CloudinaryVideoUpload({
 
   // Upload video to Cloudinary
   const uploadToCloudinary = useCallback(async (file: File, uploadingVideoId: string) => {
+    let progressInterval: NodeJS.Timeout | null = null
+    
     try {
+      // Simulate progress since fetch doesn't support onUploadProgress
+      progressInterval = setInterval(() => {
+        setUploadingVideos(prev => prev.map(v => {
+          if (v.id === uploadingVideoId && v.progress < 90) {
+            return { ...v, progress: v.progress + Math.random() * 10 }
+          }
+          return v
+        }))
+      }, 200)
+
       const formData = new FormData()
       formData.append('file', file)
       formData.append('folder', folder)
@@ -129,18 +141,15 @@ export default function CloudinaryVideoUpload({
         formData.append('upload_preset', uploadPreset)
       }
 
-      const response = await fetch('/api/upload/cloudinary', {
+      const response = await fetch('/api/upload/cloudinary/unsigned', {
         method: 'POST',
-        body: formData,
-        onUploadProgress: (progressEvent: any) => {
-          if (progressEvent.total) {
-            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            setUploadingVideos(prev => prev.map(v => 
-              v.id === uploadingVideoId ? { ...v, progress } : v
-            ))
-          }
-        }
-      } as any)
+        body: formData
+      })
+
+      // Clear progress interval
+      if (progressInterval) {
+        clearInterval(progressInterval)
+      }
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -172,7 +181,8 @@ export default function CloudinaryVideoUpload({
       // Add to uploaded videos
       setUploadedVideos(prev => {
         const newVideos = [...prev, cloudinaryVideo]
-        onUpload(newVideos)
+        // Use setTimeout to avoid setState during render
+        setTimeout(() => onUpload(newVideos), 0)
         return newVideos
       })
 
@@ -184,6 +194,11 @@ export default function CloudinaryVideoUpload({
     } catch (error) {
       console.error('Upload error:', error)
       const errorMessage = error instanceof Error ? error.message : 'Upload failed'
+      
+      // Clear progress interval on error
+      if (progressInterval) {
+        clearInterval(progressInterval)
+      }
       
       setUploadingVideos(prev => prev.map(v => 
         v.id === uploadingVideoId 
@@ -292,7 +307,8 @@ export default function CloudinaryVideoUpload({
       // Remove from state
       setUploadedVideos(prev => {
         const newVideos = prev.filter(v => v.publicId !== publicId)
-        onUpload(newVideos)
+        // Use setTimeout to avoid setState during render
+        setTimeout(() => onUpload(newVideos), 0)
         return newVideos
       })
 

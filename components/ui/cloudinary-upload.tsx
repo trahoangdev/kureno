@@ -115,35 +115,62 @@ export default function CloudinaryUpload({
 
   // Upload file to Cloudinary
   const uploadToCloudinary = useCallback(async (file: File, uploadingFileId: string) => {
+    let progressInterval: NodeJS.Timeout | null = null
+    
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('folder', folder)
-      
-      if (uploadPreset) {
-        formData.append('upload_preset', uploadPreset)
+      // Simulate progress since fetch doesn't support onUploadProgress
+      progressInterval = setInterval(() => {
+        setUploadingFiles(prev => prev.map(f => {
+          if (f.id === uploadingFileId && f.progress < 90) {
+            return { ...f, progress: f.progress + Math.random() * 10 }
+          }
+          return f
+        }))
+      }, 200)
+
+      // Get signed upload parameters
+      const signedResponse = await fetch('/api/upload/cloudinary/signed', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          folder,
+          publicIdPrefix: uploadPreset
+        })
+      })
+
+      if (!signedResponse.ok) {
+        throw new Error('Failed to get signed upload parameters')
       }
 
-      // Add resource type
-      const resourceType = file.type.startsWith('image/') ? 'image' : 'video'
-      formData.append('resource_type', resourceType)
+      const signedData = await signedResponse.json()
 
-      const response = await fetch('/api/upload/cloudinary', {
+      // Use signed upload to Cloudinary
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('signature', signedData.signature)
+      formData.append('timestamp', signedData.timestamp.toString())
+      formData.append('api_key', signedData.apiKey)
+      formData.append('folder', signedData.folder)
+      
+      if (signedData.publicId) {
+        formData.append('public_id', signedData.publicId)
+      }
+
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${signedData.cloudName}/upload`, {
         method: 'POST',
-        body: formData,
-        onUploadProgress: (progressEvent: any) => {
-          if (progressEvent.total) {
-            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            setUploadingFiles(prev => prev.map(f => 
-              f.id === uploadingFileId ? { ...f, progress } : f
-            ))
-          }
-        }
-      } as any)
+        body: formData
+      })
+
+      // Clear progress interval
+      if (progressInterval) {
+        clearInterval(progressInterval)
+      }
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Upload failed')
+        throw new Error(errorData.error?.message || 'Upload failed')
       }
 
       const result = await response.json()
@@ -169,7 +196,8 @@ export default function CloudinaryUpload({
       // Add to uploaded files
       setUploadedFiles(prev => {
         const newFiles = [...prev, cloudinaryFile]
-        onUpload(newFiles)
+        // Use setTimeout to avoid setState during render
+        setTimeout(() => onUpload(newFiles), 0)
         return newFiles
       })
 
@@ -181,6 +209,11 @@ export default function CloudinaryUpload({
     } catch (error) {
       console.error('Upload error:', error)
       const errorMessage = error instanceof Error ? error.message : 'Upload failed'
+      
+      // Clear progress interval on error
+      if (progressInterval) {
+        clearInterval(progressInterval)
+      }
       
       setUploadingFiles(prev => prev.map(f => 
         f.id === uploadingFileId 
@@ -289,7 +322,8 @@ export default function CloudinaryUpload({
       // Remove from state
       setUploadedFiles(prev => {
         const newFiles = prev.filter(f => f.publicId !== publicId)
-        onUpload(newFiles)
+        // Use setTimeout to avoid setState during render
+        setTimeout(() => onUpload(newFiles), 0)
         return newFiles
       })
 
