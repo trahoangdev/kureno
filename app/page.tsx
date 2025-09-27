@@ -38,6 +38,7 @@ import BlogPost from "@/lib/models/blog-post"
 import Category from "@/lib/models/category"
 import User from "@/lib/models/user"
 import Order from "@/lib/models/order"
+import HomeProductCard from "@/components/home-product-card"
 
 // Fetch real data functions
 async function getFeaturedProducts() {
@@ -370,98 +371,7 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredProducts.length > 0 ? featuredProducts.slice(0, 6).map((product: any) => (
-              <Card key={product._id} className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
-                <div className="relative">
-                <div className="relative h-[300px] overflow-hidden">
-                  <Image
-                      src={product.images?.[0] || "/placeholder.png"}
-                      alt={product.name}
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-                    
-                    {/* Action Buttons */}
-                    <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Button size="sm" variant="secondary" className="h-8 w-8 p-0 rounded-full shadow-lg">
-                        <Heart className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="secondary" className="h-8 w-8 p-0 rounded-full shadow-lg" asChild>
-                        <Link href={`/products/${product._id}`}>
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </div>
-
-                    {/* Badges */}
-                    <div className="absolute top-3 left-3 flex flex-col gap-2">
-                      {product.featured && (
-                        <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">
-                          <Award className="h-3 w-3 mr-1" />
-                          Featured
-                        </Badge>
-                      )}
-                      {product.isNew && (
-                        <Badge className="bg-teal-500 hover:bg-teal-600 text-white">
-                          <Sparkles className="h-3 w-3 mr-1" />
-                          New
-                        </Badge>
-                      )}
-                      {product.discount && (
-                        <Badge variant="destructive">
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          -{product.discount}%
-                        </Badge>
-                      )}
-                    </div>
-                </div>
-
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-semibold text-lg mb-2 group-hover:text-teal-600 transition-colors">
-                          {product.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                          {product.description}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <div className="flex">
-                            {[...Array(5)].map((_, i) => (
-                              <Star 
-                                key={i} 
-                                className={`h-4 w-4 ${
-                                  i < 4 // Default rating since we don't have review data yet
-                                    ? 'fill-yellow-400 text-yellow-400' 
-                                    : 'text-gray-300'
-                                }`} 
-                              />
-                            ))}
-                          </div>
-                          <span className="text-sm text-muted-foreground">(4.0)</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl font-bold text-teal-600">${product.price}</span>
-                            {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                              <span className="text-sm text-muted-foreground line-through">${product.originalPrice}</span>
-                            )}
-                          </div>
-                        </div>
-                        <Button size="sm" className="rounded-full" asChild>
-                          <Link href={`/products/${product._id}`}>
-                            <ShoppingCart className="h-4 w-4 mr-2" />
-                            View
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </div>
-              </Card>
+              <HomeProductCard key={product._id} product={product} />
             )) : (
               <div className="col-span-full text-center py-12">
                 <p className="text-muted-foreground">No featured products available.</p>

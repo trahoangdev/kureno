@@ -28,7 +28,8 @@ import {
   TrendingUp,
   GitCompare,
   Bookmark,
-  Flag
+  Flag,
+  Sparkles
 } from "lucide-react"
 import ProductGallery from "@/app/products/[id]/product-gallery"
 import ProductReviews from "@/app/products/[id]/product-reviews"
@@ -153,6 +154,24 @@ export default async function ProductDetail({ params }: { params: { id: string }
                     <Badge variant="outline" className="text-xs">
                       <Award className="h-3 w-3 mr-1" />
                       Featured
+                    </Badge>
+                  )}
+                  {product.isNewProduct && (
+                    <Badge className="bg-teal-500 hover:bg-teal-600 text-white text-xs">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      New
+                    </Badge>
+                  )}
+                  {product.isTrending && (
+                    <Badge className="bg-orange-500 hover:bg-orange-600 text-white text-xs">
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      Trending
+                    </Badge>
+                  )}
+                  {product.isBestSeller && (
+                    <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-xs">
+                      <Award className="h-3 w-3 mr-1" />
+                      Best Seller
                     </Badge>
                   )}
                   {product.onSale && (

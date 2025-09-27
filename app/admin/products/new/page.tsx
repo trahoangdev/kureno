@@ -122,7 +122,8 @@ import {
   Cat, 
   Dog, 
   Rabbit, 
-  Turtle
+  Turtle,
+  Sparkles
 } from "lucide-react"
 import Link from "next/link"
 
@@ -148,6 +149,10 @@ export default function NewProductPage() {
     salePrice: "",
     saleStartDate: "",
     saleEndDate: "",
+    // Badge management
+    isTrending: false,
+    isBestSeller: false,
+    isNewProduct: false,
     // Advanced fields
     sku: "",
     weight: "",
@@ -209,6 +214,14 @@ export default function NewProductPage() {
   const handleSelectChange = (value: string) => {
     setFormData((prev) => ({ ...prev, category: value }))
     setHasUnsavedChanges(true)
+    
+    // Auto-generate SKU if not already set
+    if (!formData.sku) {
+      const prefix = value ? value.slice(0, 3).toUpperCase() : "PRD"
+      const random = Math.random().toString(36).substr(2, 6).toUpperCase()
+      const sku = `${prefix}-${random}`
+      setFormData((prev) => ({ ...prev, sku }))
+    }
   }
 
   const handleAdvancedChange = (field: string, value: any) => {
@@ -296,6 +309,10 @@ export default function NewProductPage() {
         featured: formData.featured,
         images: filteredImages,
         videos: formData.videos.filter(video => video.trim() !== ""),
+        // Badge management
+        isTrending: formData.isTrending,
+        isBestSeller: formData.isBestSeller,
+        isNewProduct: formData.isNewProduct,
         // Advanced fields
         sku: formData.sku,
         weight: formData.weight,
@@ -342,16 +359,45 @@ export default function NewProductPage() {
 
   const handleSaveDraft = async () => {
     setIsLoading(true)
+    setError(null)
+    
     try {
+      // Basic validation for draft
+      if (!formData.name.trim()) {
+        throw new Error("Product name is required to save draft")
+      }
+
+      // Filter out empty image URLs
+      const filteredImages = formData.images.filter((url) => url.trim() !== "")
+      
       const productData = {
-        ...formData,
-        status: "draft",
+        name: formData.name,
+        description: formData.description,
         price: formData.onSale ? 
           (formData.salePrice ? Number.parseFloat(formData.salePrice) : 0) : 
           (formData.price ? Number.parseFloat(formData.price) : 0),
-        originalPrice: formData.onSale && formData.originalPrice ? Number.parseFloat(formData.originalPrice) : null,
+        originalPrice: formData.onSale && formData.originalPrice ? Number.parseFloat(formData.originalPrice) : undefined,
+        onSale: formData.onSale,
+        saleStartDate: formData.saleStartDate || null,
+        saleEndDate: formData.saleEndDate || null,
+        category: formData.category || "uncategorized",
         stock: formData.stock ? Number.parseInt(formData.stock) : 0,
+        featured: formData.featured,
+        images: filteredImages.length > 0 ? filteredImages : [""],
         videos: formData.videos.filter(video => video.trim() !== ""),
+        // Badge management
+        isTrending: formData.isTrending,
+        isBestSeller: formData.isBestSeller,
+        isNewProduct: formData.isNewProduct,
+        // Advanced fields
+        sku: formData.sku,
+        weight: formData.weight,
+        dimensions: formData.dimensions,
+        seo: formData.seo,
+        tags: formData.tags,
+        status: "draft",
+        visibility: formData.visibility,
+        inventory: formData.inventory,
       }
 
       const response = await fetch("/api/products", {
@@ -362,17 +408,28 @@ export default function NewProductPage() {
         body: JSON.stringify(productData),
       })
 
-      if (response.ok) {
-        toast({
-          title: "Draft Saved",
-          description: "Your product draft has been saved.",
-        })
-        setHasUnsavedChanges(false)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to save draft")
       }
-    } catch (error) {
+
+      toast({
+        title: "Draft Saved",
+        description: "Your product draft has been saved successfully.",
+      })
+
+      setHasUnsavedChanges(false)
+      
+      // Optionally redirect to edit page
+      if (data._id) {
+        router.push(`/admin/products/${data._id}/edit`)
+      }
+    } catch (error: any) {
+      setError(error.message || "Failed to save draft")
       toast({
         title: "Error",
-        description: "Failed to save draft.",
+        description: error.message || "Failed to save draft",
         variant: "destructive",
       })
     } finally {
@@ -386,6 +443,64 @@ export default function NewProductPage() {
     const sku = `${prefix}-${random}`
     setFormData((prev) => ({ ...prev, sku }))
     setHasUnsavedChanges(true)
+  }
+
+  const handleResetForm = () => {
+    if (hasUnsavedChanges) {
+      const confirmed = window.confirm("Are you sure you want to reset the form? All unsaved changes will be lost.")
+      if (!confirmed) return
+    }
+    
+    setFormData({
+      name: "",
+      description: "",
+      price: "",
+      category: "",
+      stock: "",
+      featured: false,
+      images: [""],
+      videos: [],
+      // Sales pricing
+      onSale: false,
+      originalPrice: "",
+      salePrice: "",
+      saleStartDate: "",
+      saleEndDate: "",
+      // Badge management
+      isTrending: false,
+      isBestSeller: false,
+      isNewProduct: false,
+      // Advanced fields
+      sku: "",
+      weight: "",
+      dimensions: {
+        length: "",
+        width: "",
+        height: ""
+      },
+      seo: {
+        title: "",
+        description: "",
+        keywords: ""
+      },
+      variants: [],
+      tags: "",
+      status: "draft",
+      visibility: "public",
+      inventory: {
+        trackQuantity: true,
+        allowBackorder: false,
+        lowStockThreshold: 5
+      }
+    })
+    setHasUnsavedChanges(false)
+    setError(null)
+    setActiveTab("basic")
+    
+    toast({
+      title: "Form Reset",
+      description: "The form has been reset to its initial state.",
+    })
   }
 
   return (
@@ -426,14 +541,40 @@ export default function NewProductPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button variant="secondary" className="rounded-full bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30">
-              <Save className="mr-2 h-4 w-4" /> Save Draft
+            <Button 
+              variant="secondary" 
+              className="rounded-full bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30"
+              onClick={handleSaveDraft}
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Draft
             </Button>
-            <Button variant="secondary" className="rounded-full bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30">
+            <Button 
+              variant="secondary" 
+              className="rounded-full bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30"
+              onClick={handleResetForm}
+            >
               <RefreshCw className="mr-2 h-4 w-4" /> Reset
             </Button>
-            <Button variant="secondary" className="rounded-full bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30">
-              <Settings className="mr-2 h-4 w-4" /> Settings
+            <Button 
+              variant="secondary" 
+              className="rounded-full bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30"
+              onClick={() => {
+                if (formData.name) {
+                  toast({
+                    title: "Preview Mode",
+                    description: "Product preview will be available after saving.",
+                  })
+                } else {
+                  toast({
+                    title: "Preview Unavailable",
+                    description: "Please enter a product name first.",
+                    variant: "destructive",
+                  })
+                }
+              }}
+            >
+              <Eye className="mr-2 h-4 w-4" /> Preview
             </Button>
           </div>
         </div>
@@ -565,9 +706,29 @@ export default function NewProductPage() {
         </CardHeader>
                 <CardContent className="space-y-6">
           {error && (
-                    <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+            <Alert variant="destructive" className="mb-6">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>{error}</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setError(null)}
+                  className="ml-2 h-6 w-6 p-0"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Success Alert for Auto-save */}
+          {!hasUnsavedChanges && formData.name && (
+            <Alert className="mb-6 border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/20 dark:text-green-400">
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                Form is saved and ready. You can continue editing or submit when ready.
+              </AlertDescription>
             </Alert>
           )}
 
@@ -809,6 +970,114 @@ export default function NewProductPage() {
                     </div>
                     <Switch id="featured" checked={formData.featured} onCheckedChange={(checked) => handleSwitchChange("featured", checked)} />
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Badge Management Section */}
+              <Card className="bg-white/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Award className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    Badge Management
+                  </CardTitle>
+                  <CardDescription>Control product badges and special labels for better visibility.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Trending Badge */}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border border-orange-200/50 dark:border-orange-800/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                        <div>
+                          <Label htmlFor="isTrending" className="text-base font-medium">Trending Badge</Label>
+                          <p className="text-sm text-muted-foreground">Show trending badge (high stock + featured)</p>
+                        </div>
+                      </div>
+                    </div>
+                    <Switch 
+                      id="isTrending" 
+                      checked={formData.isTrending} 
+                      onCheckedChange={(checked) => handleSwitchChange("isTrending", checked)} 
+                    />
+                  </div>
+
+                  {/* Best Seller Badge */}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200/50 dark:border-purple-800/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <Award className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        <div>
+                          <Label htmlFor="isBestSeller" className="text-base font-medium">Best Seller Badge</Label>
+                          <p className="text-sm text-muted-foreground">Show best seller badge (low stock + featured)</p>
+                        </div>
+                      </div>
+                    </div>
+                    <Switch 
+                      id="isBestSeller" 
+                      checked={formData.isBestSeller} 
+                      onCheckedChange={(checked) => handleSwitchChange("isBestSeller", checked)} 
+                    />
+                  </div>
+
+                  {/* New Badge */}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 border border-teal-200/50 dark:border-teal-800/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                        <div>
+                          <Label htmlFor="isNewProduct" className="text-base font-medium">New Badge</Label>
+                          <p className="text-sm text-muted-foreground">Show new product badge</p>
+                        </div>
+                      </div>
+                    </div>
+                    <Switch 
+                      id="isNewProduct" 
+                      checked={formData.isNewProduct} 
+                      onCheckedChange={(checked) => handleSwitchChange("isNewProduct", checked)} 
+                    />
+                  </div>
+
+                  {/* Badge Preview */}
+                  {(formData.isTrending || formData.isBestSeller || formData.isNewProduct || formData.featured || formData.onSale) && (
+                    <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Eye className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Badge Preview</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.featured && (
+                          <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                            <Award className="h-3 w-3 mr-1" />
+                            Featured
+                          </Badge>
+                        )}
+                        {formData.isNewProduct && (
+                          <Badge className="bg-teal-500 hover:bg-teal-600 text-white">
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            New
+                          </Badge>
+                        )}
+                        {formData.onSale && formData.originalPrice && formData.salePrice && (
+                          <Badge variant="destructive">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            Sale
+                          </Badge>
+                        )}
+                        {formData.isTrending && (
+                          <Badge className="bg-orange-500 hover:bg-orange-600 text-white">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            Trending
+                          </Badge>
+                        )}
+                        {formData.isBestSeller && (
+                          <Badge className="bg-purple-500 hover:bg-purple-600 text-white">
+                            <Award className="h-3 w-3 mr-1" />
+                            Best Seller
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1211,6 +1480,24 @@ export default function NewProductPage() {
                     <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                       <Star className="mr-1 h-3 w-3" />
                       Featured
+                    </Badge>
+                  )}
+                  {formData.isNewProduct && (
+                    <Badge className="bg-teal-500 hover:bg-teal-600 text-white">
+                      <Sparkles className="mr-1 h-3 w-3" />
+                      New
+                    </Badge>
+                  )}
+                  {formData.isTrending && (
+                    <Badge className="bg-orange-500 hover:bg-orange-600 text-white">
+                      <TrendingUp className="mr-1 h-3 w-3" />
+                      Trending
+                    </Badge>
+                  )}
+                  {formData.isBestSeller && (
+                    <Badge className="bg-purple-500 hover:bg-purple-600 text-white">
+                      <Award className="mr-1 h-3 w-3" />
+                      Best Seller
                     </Badge>
                   )}
                   {formData.onSale && (

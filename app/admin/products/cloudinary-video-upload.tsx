@@ -157,7 +157,7 @@ export default function CloudinaryVideoUploadComponent({
             folder={folder}
             multiple={true}
             showPreview={true}
-            uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+            uploadPreset="kureno_videos"
             className="border rounded-lg p-4"
           />
         </TabsContent>

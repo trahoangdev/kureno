@@ -200,6 +200,7 @@ export async function POST(req: NextRequest) {
 
     } catch (error) {
       console.error('Cloudinary upload error:', error)
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
       
       // Clean up temp file if it exists
       try {
@@ -213,7 +214,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Upload failed',
-          details: error instanceof Error ? error.message : 'Unknown error'
+          details: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
         },
         { status: 500 }
       )

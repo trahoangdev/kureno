@@ -97,18 +97,28 @@ export const CloudinaryUtils = {
 
       console.log('Uploading to Cloudinary with options:', uploadOptions)
 
-      // Convert Buffer to base64 data URL with proper MIME type
-      let uploadData: string
+      // Handle different file types
+      let result
       if (Buffer.isBuffer(file)) {
-        // Determine MIME type from file extension or use default
+        // Convert Buffer to base64 data URL with proper MIME type
         const mimeType = options.resourceType === 'video' ? 'video/mp4' : 'image/png'
-        uploadData = `data:${mimeType};base64,${file.toString('base64')}`
+        const uploadData = `data:${mimeType};base64,${file.toString('base64')}`
+        result = await cloudinary.uploader.upload(uploadData, uploadOptions)
       } else {
-        uploadData = file
+        // File path - use upload_stream for better performance
+        result = await new Promise(async (resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
+            if (error) reject(error)
+            else resolve(result)
+          })
+          
+          // For file path, we need to read the file and pipe it to the stream
+          const fs = await import('fs')
+          const fileStream = fs.createReadStream(file)
+          fileStream.pipe(uploadStream)
+        })
       }
-
-      const result = await cloudinary.uploader.upload(uploadData, uploadOptions)
-      console.log('Cloudinary upload result:', result.public_id)
+      console.log('Cloudinary upload result:', (result as any).public_id)
       return result as CloudinaryUploadResult
     } catch (error) {
       console.error('Cloudinary upload error details:', error)

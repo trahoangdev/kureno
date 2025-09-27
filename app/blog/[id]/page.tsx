@@ -11,6 +11,7 @@ import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 import BlogInteractions from "./blog-interactions"
 import RelatedPosts from "./related-posts"
+import RelatedPostsSidebar from "./related-posts-sidebar"
 import TableOfContents from "./table-of-contents"
 import ReadingProgress from "./reading-progress"
 import CommentsSystem from "./comments-system"
@@ -267,7 +268,7 @@ export default async function BlogDetail({ params }: { params: { id: string } })
               <Card>
                 <CardContent className="p-6">
                   <h3 className="font-semibold mb-4">Related Posts</h3>
-                  <RelatedPosts currentPostId={post._id} limit={3} />
+                  <RelatedPostsSidebar currentPostId={post._id} limit={3} />
                 </CardContent>
               </Card>
             </div>
@@ -276,7 +277,7 @@ export default async function BlogDetail({ params }: { params: { id: string } })
 
         {/* Related Articles Section */}
         <div className="mt-16">
-          <h2 className="text-2xl font-bold mb-8">You Might Also Like</h2>
+          <h2 className="text-2xl font-bold mb-8">Related Posts</h2>
           <RelatedPosts currentPostId={post._id} limit={6} />
         </div>
 

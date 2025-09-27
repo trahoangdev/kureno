@@ -128,37 +128,22 @@ export default function CloudinaryUpload({
         }))
       }, 200)
 
-      // Get signed upload parameters
-      const signedResponse = await fetch('/api/upload/cloudinary/signed', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          folder,
-          publicIdPrefix: uploadPreset
-        })
-      })
-
-      if (!signedResponse.ok) {
-        throw new Error('Failed to get signed upload parameters')
+      // Use direct Cloudinary upload with preset
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+      if (!cloudName) {
+        throw new Error('Cloudinary cloud name not configured')
       }
 
-      const signedData = await signedResponse.json()
-
-      // Use signed upload to Cloudinary
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('signature', signedData.signature)
-      formData.append('timestamp', signedData.timestamp.toString())
-      formData.append('api_key', signedData.apiKey)
-      formData.append('folder', signedData.folder)
+      formData.append('upload_preset', uploadPreset || 'kureno_images')
       
-      if (signedData.publicId) {
-        formData.append('public_id', signedData.publicId)
+      // Add folder parameter if provided
+      if (folder) {
+        formData.append('folder', folder)
       }
 
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${signedData.cloudName}/upload`, {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
         method: 'POST',
         body: formData
       })

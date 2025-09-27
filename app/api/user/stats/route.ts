@@ -6,6 +6,8 @@ import Order from "@/lib/models/order"
 import Wishlist from "@/models/wishlist"
 import Review from "@/lib/models/review"
 
+export const dynamic = 'force-dynamic'
+
 // Helper function to check authentication
 async function checkAuth() {
   try {
@@ -63,11 +65,11 @@ export async function GET() {
 
     // Calculate average rating from user reviews
     const averageRating = userReviews.length > 0 
-      ? userReviews.reduce((sum, review) => sum + (review.rating || 0), 0) / userReviews.length
+      ? userReviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0) / userReviews.length
       : 0
 
     // Calculate total spent
-    const totalSpent = completedOrders.reduce((sum, order) => sum + (order.total || 0), 0)
+    const totalSpent = completedOrders.reduce((sum: number, order: any) => sum + (order.total || 0), 0)
 
     // Calculate additional stats
     const stats = {

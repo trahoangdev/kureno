@@ -18,7 +18,7 @@ export interface IPermissions {
   canManageSettings: boolean
 }
 
-export interface IUser extends mongoose.Document {
+export interface IUser {
   name: string
   email: string
   password: string
@@ -63,7 +63,7 @@ const permissionsSchema = new mongoose.Schema(
   { _id: false },
 )
 
-const userSchema = new mongoose.Schema<IUser>(
+const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -139,7 +139,7 @@ const userSchema = new mongoose.Schema<IUser>(
 )
 
 // Hash password before saving
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function (this: any, next: any) {
   if (!this.isModified("password")) return next()
 
   try {
@@ -152,7 +152,7 @@ userSchema.pre("save", async function (next) {
 })
 
 // Set permissions based on role
-userSchema.pre("save", function (next) {
+userSchema.pre("save", function (this: any, next: any) {
   if (this.isModified("role")) {
     if (this.role === "admin") {
       this.permissions = {
@@ -191,4 +191,5 @@ userSchema.methods.comparePassword = async function (candidatePassword: string) 
   return bcrypt.compare(candidatePassword, this.password)
 }
 
-export default mongoose.models.User || mongoose.model<IUser>("User", userSchema)
+
+export default mongoose.models.User || mongoose.model("User", userSchema)

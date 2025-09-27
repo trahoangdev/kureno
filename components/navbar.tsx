@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, X, ShoppingBag, User, Shield, Search, Bell, Heart, Settings, LogOut, ChevronDown } from "lucide-react"
+import { Menu, X, ShoppingBag, User, Shield, Search, Bell, Heart, Settings, LogOut, ChevronDown, GitCompare } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useCart } from "@/context/cart-context"
 import { Cart } from "@/components/cart"
@@ -213,6 +213,12 @@ export default function Navbar() {
                           <Link href="/account/wishlist" className="flex items-center">
                             <Heart className="mr-2 h-4 w-4" />
                             <span>Wishlist</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/compare" className="flex items-center">
+                            <GitCompare className="mr-2 h-4 w-4" />
+                            <span>Compare</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>

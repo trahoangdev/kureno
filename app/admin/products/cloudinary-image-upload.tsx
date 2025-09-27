@@ -160,7 +160,7 @@ export default function CloudinaryImageUpload({
             multiple={true}
             showPreview={true}
             initialFiles={currentCloudinaryFiles}
-            uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+            uploadPreset="kureno_images"
             className="border rounded-lg p-4"
           />
         </TabsContent>

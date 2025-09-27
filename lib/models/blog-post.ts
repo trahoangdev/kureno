@@ -88,4 +88,5 @@ const blogPostSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
+
 export default mongoose.models.BlogPost || mongoose.model<IBlogPost>("BlogPost", blogPostSchema)

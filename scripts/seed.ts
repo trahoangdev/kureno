@@ -749,7 +749,7 @@ Through our partnership with local artisans, we ensure that these ancient techni
 
 In our fast-paced modern world, the deliberate, meditative process of ikat weaving reminds us of the value of patience, skill, and cultural continuity. Every thread woven is a thread connecting us to our past and future.`,
       excerpt: "Discover the ancient art of ikat weaving and how traditional techniques are being preserved for future generations through master artisan partnerships.",
-      author: adminUser._id as mongoose.Types.ObjectId,
+      author: adminUser._id as any,
       coverImage: "/placeholder.png",
       tags: ["ikat", "weaving", "heritage", "craftsmanship", "traditional"],
       published: true,
@@ -801,7 +801,7 @@ Our ceramic tradition is inherently sustainable. We use local materials, fire wi
 
 In every ceramic piece, you hold thousands of years of human creativity and cultural continuity. These are not just objects, but vessels carrying our heritage into the future.`,
       excerpt: "Follow the sacred journey from local clay to finished ceramic art, exploring traditional techniques and cultural significance preserved by master craftspeople.",
-      author: adminUser._id as mongoose.Types.ObjectId,
+      author: adminUser._id as any,
       coverImage: "/placeholder.png",
       tags: ["ceramics", "pottery", "craftsmanship", "traditional", "heritage"],
       published: true,
@@ -854,7 +854,7 @@ Each wooden piece carries cultural significance. The forms, proportions, and dec
 
 When you hold a piece of our handcrafted woodwork, you're touching not just wood, but the hands of the artisan, the roots of the tree, and the wisdom of generations. This is craftsmanship with purpose, creating beauty that honors both nature and culture.`,
       excerpt: "Explore sustainable woodworking practices that honor trees and preserve traditional craftsmanship techniques for future generations.",
-      author: adminUser._id as mongoose.Types.ObjectId,
+      author: adminUser._id as any,
       coverImage: "/placeholder.png",
       tags: ["woodworking", "sustainable", "traditional", "craftsmanship", "heritage"],
       published: true,
@@ -910,7 +910,7 @@ In our digital age, handcrafted jewelry offers something irreplaceable – the t
 
 When you wear our traditional jewelry, you carry with you not just beautiful metalwork, but the prayers, hopes, and artistic vision of countless artisans. You become part of an unbroken chain of cultural continuity, wearing history as art.`,
       excerpt: "Discover the sacred art of traditional jewelry making, where ancient techniques transform precious metals into meaningful cultural treasures.",
-      author: adminUser._id as mongoose.Types.ObjectId,
+      author: adminUser._id as any,
       coverImage: "/placeholder.png",
       tags: ["jewelry", "traditional", "silversmith", "metalwork", "cultural"],
       published: true,
@@ -979,7 +979,7 @@ Many cultures believe that objects carry energy from their creators. Heritage pi
 
 Heritage home decor is about more than aesthetics – it's about creating spaces that honor our cultural roots, nurture our spirits, and connect us to something larger than ourselves. When we fill our homes with meaningful objects, we create sanctuaries for the soul.`,
       excerpt: "Explore the philosophy behind heritage home decor and how traditional pieces can transform modern spaces into sacred, meaningful sanctuaries.",
-      author: adminUser._id as mongoose.Types.ObjectId,
+      author: adminUser._id as any,
       coverImage: "/placeholder.png",
       tags: ["home decor", "heritage", "traditional", "sacred spaces", "philosophy"],
       published: true,
@@ -1226,7 +1226,7 @@ Heritage home decor is about more than aesthetics – it's about creating spaces
   const allProducts = await Product.find({}, '_id').lean()
   
   if (allUsers.length > 0 && allProducts.length > 0) {
-    const wishlistData = []
+    const wishlistData: any[] = []
     
     // Add some random wishlist items for each user
     for (const user of allUsers.slice(0, 3)) { // Only for first 3 users
@@ -1236,8 +1236,8 @@ Heritage home decor is about more than aesthetics – it's about creating spaces
       
       for (const product of randomProducts) {
         wishlistData.push({
-          userId: (user._id as mongoose.Types.ObjectId).toString(),
-          productId: product._id as mongoose.Types.ObjectId,
+          userId: (user._id as any).toString(),
+          productId: product._id as any,
           addedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000) // Random date within last 30 days
         })
       }
@@ -1249,7 +1249,7 @@ Heritage home decor is about more than aesthetics – it's about creating spaces
   }
 
   // User Notifications
-  const notificationsData = []
+  const notificationsData: any[] = []
   
   // Create notifications for each customer user
   for (const user of customerUsers) {

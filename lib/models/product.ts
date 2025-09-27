@@ -45,14 +45,14 @@ export interface IProductMethods {
 }
 
 export interface IProductStatics {
-  findActive(): mongoose.Query<IProduct[], IProduct>
-  findFeatured(limit?: number): mongoose.Query<IProduct[], IProduct>
-  findOnSale(limit?: number): mongoose.Query<IProduct[], IProduct>
-  findByCategory(category: string, limit?: number): mongoose.Query<IProduct[], IProduct>
-  searchProducts(query: string, options?: any): mongoose.Query<IProduct[], IProduct>
+  findActive(): any
+  findFeatured(limit?: number): any
+  findOnSale(limit?: number): any
+  findByCategory(category: string, limit?: number): any
+  searchProducts(query: string, options?: any): any
 }
 
-export interface IProduct extends mongoose.Document, IProductMethods {
+export interface IProduct extends IProductMethods {
   name: string
   description: string
   price: number
@@ -65,6 +65,10 @@ export interface IProduct extends mongoose.Document, IProductMethods {
   category: string
   stock: number
   featured: boolean
+  // Badge management
+  isTrending: boolean
+  isBestSeller: boolean
+  isNewProduct: boolean
   // Advanced fields
   sku?: string
   weight?: number
@@ -89,7 +93,7 @@ export interface IProduct extends mongoose.Document, IProductMethods {
   updatedAt: Date
 }
 
-export interface IProductModel extends mongoose.Model<IProduct>, IProductStatics {}
+export interface IProductModel extends IProductStatics {}
 
 const variantOptionSchema = new mongoose.Schema({
   id: { type: String, required: true },
@@ -134,7 +138,6 @@ const productSchema = new mongoose.Schema(
       required: [true, "Please provide a product name"],
       trim: true,
       maxlength: [100, "Product name cannot exceed 100 characters"],
-      index: true,
     },
     description: {
       type: String,
@@ -145,7 +148,6 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Please provide a product price"],
       min: [0, "Price must be positive"],
-      index: true,
     },
     originalPrice: {
       type: Number,
@@ -155,7 +157,6 @@ const productSchema = new mongoose.Schema(
     onSale: {
       type: Boolean,
       default: false,
-      index: true,
     },
     saleStartDate: {
       type: Date,
@@ -193,7 +194,6 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please provide a product category"],
       trim: true,
-      index: true,
     },
     stock: {
       type: Number,
@@ -204,7 +204,19 @@ const productSchema = new mongoose.Schema(
     featured: {
       type: Boolean,
       default: false,
-      index: true,
+    },
+    // Badge management
+    isTrending: {
+      type: Boolean,
+      default: false,
+    },
+    isBestSeller: {
+      type: Boolean,
+      default: false,
+    },
+    isNewProduct: {
+      type: Boolean,
+      default: false,
     },
     // Advanced fields
     sku: {
@@ -250,7 +262,6 @@ const productSchema = new mongoose.Schema(
         message: "Status must be draft, published, or archived"
       },
       default: "draft",
-      index: true,
     },
     visibility: {
       type: String,
@@ -259,7 +270,6 @@ const productSchema = new mongoose.Schema(
         message: "Visibility must be public, private, or hidden"
       },
       default: "public",
-      index: true,
     },
     inventory: {
       type: inventorySchema,
@@ -295,27 +305,27 @@ const productSchema = new mongoose.Schema(
 )
 
 // Virtual fields
-productSchema.virtual('isActive').get(function() {
+productSchema.virtual('isActive').get(function(this: any) {
   return this.status === 'published' && this.visibility === 'public'
 })
 
-productSchema.virtual('discountPercentage').get(function() {
+productSchema.virtual('discountPercentage').get(function(this: any) {
   if (this.onSale && this.originalPrice && this.originalPrice > this.price) {
     return Math.round(((this.originalPrice - this.price) / this.originalPrice) * 100)
   }
   return 0
 })
 
-productSchema.virtual('isInStock').get(function() {
+productSchema.virtual('isInStock').get(function(this: any) {
   return this.stock > 0 || (this.inventory?.allowBackorder ?? false)
 })
 
-productSchema.virtual('isLowStock').get(function() {
+productSchema.virtual('isLowStock').get(function(this: any) {
   const threshold = this.inventory?.lowStockThreshold ?? 5
   return this.stock <= threshold && this.stock > 0
 })
 
-productSchema.virtual('displayPrice').get(function() {
+productSchema.virtual('displayPrice').get(function(this: any) {
   return this.onSale && this.originalPrice ? this.price : this.price
 })
 
@@ -325,10 +335,9 @@ productSchema.index({ category: 1, featured: -1 })
 productSchema.index({ price: 1, onSale: -1 })
 productSchema.index({ status: 1, visibility: 1 })
 productSchema.index({ createdAt: -1 })
-productSchema.index({ slug: 1 }, { unique: true, sparse: true })
 
 // Pre-save middleware
-productSchema.pre('save', function(next) {
+productSchema.pre('save', function(this: any, next: any) {
   // Generate slug from name if not provided
   if (!this.slug && this.name) {
     this.slug = this.name
@@ -453,4 +462,4 @@ productSchema.statics.searchProducts = function(query: string, options: any = {}
     .limit(limit)
 }
 
-export default mongoose.models.Product || mongoose.model<IProduct>("Product", productSchema)
+export default mongoose.models.Product || mongoose.model("Product", productSchema)

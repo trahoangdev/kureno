@@ -5,6 +5,8 @@ import { connectToDatabase } from "@/lib/db"
 import Review from "@/lib/models/review"
 import Product from "@/lib/models/product"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     const session = (await getServerSession(authOptions as any)) as any

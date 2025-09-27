@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 
-export interface ICategory extends mongoose.Document {
+export interface ICategory {
   name: string
   slug: string
   description?: string
@@ -17,6 +17,7 @@ const categorySchema = new mongoose.Schema(
   { timestamps: true },
 )
 
-export default mongoose.models.Category || mongoose.model<ICategory>("Category", categorySchema)
+
+export default mongoose.models.Category || mongoose.model("Category", categorySchema)
 
 

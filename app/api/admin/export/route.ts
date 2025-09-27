@@ -3,6 +3,8 @@ import { connectToDatabase } from "@/lib/db"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
+export const dynamic = 'force-dynamic'
+
 // Import models
 import Product from "@/lib/models/product"
 import Category from "@/lib/models/category"

@@ -134,14 +134,21 @@ export default function CloudinaryVideoUpload({
 
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('folder', folder)
+      formData.append('upload_preset', uploadPreset || 'kureno_videos')
       formData.append('resource_type', 'video')
       
-      if (uploadPreset) {
-        formData.append('upload_preset', uploadPreset)
+      // Add folder parameter if provided
+      if (folder) {
+        formData.append('folder', folder)
       }
 
-      const response = await fetch('/api/upload/cloudinary/unsigned', {
+      // Use direct Cloudinary upload with preset
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+      if (!cloudName) {
+        throw new Error('Cloudinary cloud name not configured')
+      }
+
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
         method: 'POST',
         body: formData
       })

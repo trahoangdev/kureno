@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, User, Eye } from "lucide-react"
+import { User, Eye } from "lucide-react"
 
 interface RelatedPost {
   _id: string
@@ -23,12 +22,12 @@ interface RelatedPost {
   } | null
 }
 
-interface RelatedPostsProps {
+interface RelatedPostsSidebarProps {
   currentPostId: string
   limit?: number
 }
 
-export default function RelatedPosts({ currentPostId, limit = 6 }: RelatedPostsProps) {
+export default function RelatedPostsSidebar({ currentPostId, limit = 3 }: RelatedPostsSidebarProps) {
   const [posts, setPosts] = useState<RelatedPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -51,27 +50,20 @@ export default function RelatedPosts({ currentPostId, limit = 6 }: RelatedPostsP
     fetchRelatedPosts()
   }, [currentPostId, limit])
 
-  const calculateReadTime = (excerpt: string) => {
-    // Estimate based on excerpt length (rough approximation)
-    const words = excerpt.split(' ').length
-    return Math.max(1, Math.ceil(words / 50)) // Assume 50 words per minute for excerpt
-  }
-
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="animate-pulse">
-            <div className="relative aspect-video bg-muted" />
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-4 bg-muted rounded w-1/2" />
+          <div key={i} className="animate-pulse">
+            <div className="flex gap-3">
+              <div className="w-16 h-16 bg-muted rounded-lg" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
                 <div className="h-3 bg-muted rounded w-full" />
-                <div className="h-3 bg-muted rounded w-2/3" />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
     )
@@ -79,19 +71,19 @@ export default function RelatedPosts({ currentPostId, limit = 6 }: RelatedPostsP
 
   if (posts.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">No related posts found.</p>
+      <div className="text-center py-4">
+        <p className="text-sm text-muted-foreground">No related posts found.</p>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="space-y-4">
       {posts.map((post) => (
         <Link key={post._id} href={`/blog/${post._id}`}>
-          <Card className="group overflow-hidden transition-all hover:shadow-lg bg-card border-border">
-            {/* Image Placeholder */}
-            <div className="relative aspect-video overflow-hidden bg-muted">
+          <div className="group flex gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+            {/* Image */}
+            <div className="relative w-16 h-16 overflow-hidden rounded-lg bg-muted flex-shrink-0">
               <Image 
                 src={post.coverImage || "/placeholder.png"} 
                 alt={post.title} 
@@ -100,16 +92,17 @@ export default function RelatedPosts({ currentPostId, limit = 6 }: RelatedPostsP
               />
             </div>
             
-            <CardContent className="p-4 space-y-3">
+            {/* Content */}
+            <div className="flex-1 min-w-0 space-y-2">
               {/* Tags */}
-              <div className="flex flex-wrap gap-2">
-                {post.tags.slice(0, 3).map((tag, index) => (
+              <div className="flex flex-wrap gap-1">
+                {post.tags.slice(0, 2).map((tag, index) => (
                   <Badge 
                     key={index} 
                     variant="secondary" 
-                    className="text-xs bg-muted text-muted-foreground hover:bg-muted/80"
+                    className="text-xs bg-muted text-muted-foreground hover:bg-muted/80 px-1.5 py-0.5"
                   >
-                    {tag.length > 8 ? tag.substring(0, 8) + "..." : tag}
+                    {tag.length > 6 ? tag.substring(0, 6) + "..." : tag}
                   </Badge>
                 ))}
               </div>
@@ -121,22 +114,22 @@ export default function RelatedPosts({ currentPostId, limit = 6 }: RelatedPostsP
               </div>
               
               {/* Title */}
-              <h3 className="font-semibold text-sm line-clamp-2 group-hover:text-primary transition-colors">
-                {post.title.length > 50 ? post.title.substring(0, 50) + "..." : post.title}
-              </h3>
+              <h4 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
+                {post.title.length > 40 ? post.title.substring(0, 40) + "..." : post.title}
+              </h4>
               
               {/* Description */}
               <p className="text-xs text-muted-foreground line-clamp-2">
-                {post.excerpt.length > 80 ? post.excerpt.substring(0, 80) + "..." : post.excerpt}
+                {post.excerpt.length > 60 ? post.excerpt.substring(0, 60) + "..." : post.excerpt}
               </p>
 
               {/* Author */}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <User className="h-3 w-3" />
                 {post.author?.name || "Admin User"}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </Link>
       ))}
     </div>
