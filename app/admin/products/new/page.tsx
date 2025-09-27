@@ -18,6 +18,8 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import ImageUpload from "../image-upload"
+import CloudinaryImageUpload from "../cloudinary-image-upload"
+import CloudinaryVideoUploadComponent from "../cloudinary-video-upload"
 import ProductVariants from "../product-variants"
 import MarkdownEditor from "../components/markdown-editor"
 import { 
@@ -29,6 +31,7 @@ import {
   Check, 
   Upload, 
   Image as ImageIcon, 
+  Video,
   Package, 
   DollarSign, 
   Tag, 
@@ -138,6 +141,7 @@ export default function NewProductPage() {
     stock: "",
     featured: false,
     images: [""], // Start with one empty image URL
+    videos: [] as string[], // Product videos
     // Sales pricing
     onSale: false,
     originalPrice: "",
@@ -291,6 +295,7 @@ export default function NewProductPage() {
         stock: Number.parseInt(formData.stock),
         featured: formData.featured,
         images: filteredImages,
+        videos: formData.videos.filter(video => video.trim() !== ""),
         // Advanced fields
         sku: formData.sku,
         weight: formData.weight,
@@ -346,6 +351,7 @@ export default function NewProductPage() {
           (formData.price ? Number.parseFloat(formData.price) : 0),
         originalPrice: formData.onSale && formData.originalPrice ? Number.parseFloat(formData.originalPrice) : null,
         stock: formData.stock ? Number.parseInt(formData.stock) : 0,
+        videos: formData.videos.filter(video => video.trim() !== ""),
       }
 
       const response = await fetch("/api/products", {
@@ -433,7 +439,7 @@ export default function NewProductPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="relative z-10 mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="relative z-10 mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
           <Card className="bg-white/10 text-white backdrop-blur-sm border-white/20">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -460,10 +466,10 @@ export default function NewProductPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-200">Category</p>
-                  <p className="text-xl font-bold">{formData.category ? "Selected" : "None"}</p>
+                  <p className="text-sm text-slate-200">Description</p>
+                  <p className="text-xl font-bold">{formData.description.length} chars</p>
                 </div>
-                <Tag className="h-6 w-6 text-purple-300" />
+                <Type className="h-6 w-6 text-purple-300" />
               </div>
             </CardContent>
           </Card>
@@ -475,6 +481,28 @@ export default function NewProductPage() {
                   <p className="text-xl font-bold">{isAutoSaving ? "Saving..." : "Ready"}</p>
                 </div>
                 {isAutoSaving ? <Loader2 className="h-6 w-6 animate-spin text-yellow-300" /> : <Save className="h-6 w-6 text-green-300" />}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/10 text-white backdrop-blur-sm border-white/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-200">Price</p>
+                  <p className="text-xl font-bold">${formData.onSale ? formData.salePrice : formData.price || "0"}</p>
+                </div>
+                <DollarSign className="h-6 w-6 text-green-300" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/10 text-white backdrop-blur-sm border-white/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-200">Videos</p>
+                  <p className="text-xl font-bold">{formData.videos.filter(video => video.trim()).length}</p>
+                </div>
+                <Video className="h-6 w-6 text-purple-300" />
               </div>
             </CardContent>
           </Card>
@@ -791,18 +819,33 @@ export default function NewProductPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ImageIcon className="h-5 w-5" />
-                    Product Images
+                    Product Images & Media
                   </CardTitle>
-                  <CardDescription>Upload and manage product images. Drag and drop supported.</CardDescription>
+                  <CardDescription>
+                    Upload images to Cloudinary for optimized delivery and performance, or use manual URLs.
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <ImageUpload
+                <CardContent className="space-y-6">
+                  <CloudinaryImageUpload
                     images={formData.images}
                     onImagesChange={(images) => {
                       setFormData(prev => ({ ...prev, images }))
                       setHasUnsavedChanges(true)
                     }}
                     maxImages={10}
+                    folder="products"
+                  />
+                  
+                  <Separator />
+                  
+                  <CloudinaryVideoUploadComponent
+                    videos={formData.videos}
+                    onVideosChange={(videos) => {
+                      setFormData(prev => ({ ...prev, videos }))
+                      setHasUnsavedChanges(true)
+                    }}
+                    maxVideos={5}
+                    folder="products/videos"
                   />
                 </CardContent>
               </Card>

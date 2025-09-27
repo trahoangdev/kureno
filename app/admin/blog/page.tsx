@@ -220,9 +220,53 @@ export default function BlogPostsPage() {
   }
 
   const handleBulkAction = async (action: string) => {
-    // Implement bulk actions
-    console.log(`Bulk action: ${action} on posts:`, selectedPosts)
-    setSelectedPosts([])
+    if (selectedPosts.length === 0) return
+    
+    try {
+      switch (action) {
+        case 'publish':
+          await Promise.all(selectedPosts.map(id => 
+            fetch(`/api/blog/${id}`, { 
+              method: "PATCH", 
+              headers: { "Content-Type": "application/json" }, 
+              body: JSON.stringify({ published: true, publishedAt: new Date().toISOString() }) 
+            })
+          ))
+          setPosts(prev => prev.map(p => 
+            selectedPosts.includes(p._id) 
+              ? { ...p, published: true, publishedAt: new Date().toISOString() }
+              : p
+          ))
+          break
+          
+        case 'unpublish':
+          await Promise.all(selectedPosts.map(id => 
+            fetch(`/api/blog/${id}`, { 
+              method: "PATCH", 
+              headers: { "Content-Type": "application/json" }, 
+              body: JSON.stringify({ published: false, publishedAt: null }) 
+            })
+          ))
+          setPosts(prev => prev.map(p => 
+            selectedPosts.includes(p._id) 
+              ? { ...p, published: false, publishedAt: undefined }
+              : p
+          ))
+          break
+          
+        case 'delete':
+          if (confirm(`Are you sure you want to delete ${selectedPosts.length} post(s)?`)) {
+            await Promise.all(selectedPosts.map(id => 
+              fetch(`/api/blog/${id}`, { method: "DELETE" })
+            ))
+            setPosts(prev => prev.filter(p => !selectedPosts.includes(p._id)))
+          }
+          break
+      }
+      setSelectedPosts([])
+    } catch (error) {
+      console.error('Bulk action error:', error)
+    }
   }
 
   const handleSort = (column: string) => {
@@ -245,10 +289,35 @@ export default function BlogPostsPage() {
   }
 
   const togglePublish = async (id: string, current: boolean) => {
-    const res = await fetch(`/api/blog/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ published: !current }) })
-    if (res.ok) {
-      setPosts((prev) => prev.map((p) => (p._id === id ? { ...p, published: !current, publishedAt: !current ? new Date().toISOString() : undefined } : p)))
+    try {
+      const res = await fetch(`/api/blog/${id}`, { 
+        method: "PATCH", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify({ published: !current, publishedAt: !current ? new Date().toISOString() : null }) 
+      })
+      if (res.ok) {
+        setPosts((prev) => prev.map((p) => (p._id === id ? { ...p, published: !current, publishedAt: !current ? new Date().toISOString() : undefined } : p)))
+      }
+    } catch (error) {
+      console.error('Toggle publish error:', error)
     }
+  }
+
+  const deletePost = async (id: string, title: string) => {
+    if (confirm(`Are you sure you want to delete "${title}"?`)) {
+      try {
+        const res = await fetch(`/api/blog/${id}`, { method: "DELETE" })
+        if (res.ok) {
+          setPosts(prev => prev.filter(p => p._id !== id))
+        }
+      } catch (error) {
+        console.error('Delete post error:', error)
+      }
+    }
+  }
+
+  const viewPost = (slug: string) => {
+    window.open(`/blog/${slug}`, '_blank')
   }
 
   return (
@@ -657,12 +726,10 @@ export default function BlogPostsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                                  <DropdownMenuItem asChild>
-                                    <Link href={`/blog/${post.slug}`}>
-                                      <ExternalLink className="mr-2 h-4 w-4" />
-                                      View Post
-                                    </Link>
-                            </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => viewPost(post.slug)}>
+                                    <ExternalLink className="mr-2 h-4 w-4" />
+                                    View Post
+                                  </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                                     <Link href={`/admin/blog/${post._id}/edit`}>
                                 <Edit className="mr-2 h-4 w-4" />
@@ -681,7 +748,10 @@ export default function BlogPostsPage() {
                                     <Copy className="mr-2 h-4 w-4" />
                                     Duplicate
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive focus:text-destructive">
+                            <DropdownMenuItem 
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => deletePost(post._id, post.title)}
+                            >
                               <Trash className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>
@@ -843,11 +913,9 @@ export default function BlogPostsPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/blog/${post.slug}`}>
-                                  <ExternalLink className="mr-2 h-4 w-4" />
-                                  View Post
-                                </Link>
+                              <DropdownMenuItem onClick={() => viewPost(post.slug)}>
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                View Post
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
                                 <Link href={`/admin/blog/${post._id}/edit`}>
@@ -867,7 +935,10 @@ export default function BlogPostsPage() {
                                 <Copy className="mr-2 h-4 w-4" />
                                 Duplicate
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive focus:text-destructive">
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => deletePost(post._id, post.title)}
+                              >
                                 <Trash className="mr-2 h-4 w-4" />
                                 Delete
                               </DropdownMenuItem>

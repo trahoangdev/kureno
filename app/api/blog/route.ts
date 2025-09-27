@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = (await getServerSession(authOptions as any)) as any
 
-    if (!session || session.user?.role !== "admin") {
+    if (!session || !session.user?.id || session.user?.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -60,7 +60,10 @@ export async function POST(req: NextRequest) {
     const { title, slug, content, excerpt, coverImage, tags, published, publishedAt } = body
 
     if (!title || !slug || !content || !excerpt || !coverImage) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+      return NextResponse.json({ 
+        error: "Missing required fields",
+        details: { title: !!title, slug: !!slug, content: !!content, excerpt: !!excerpt, coverImage: !!coverImage }
+      }, { status: 400 })
     }
 
     await connectToDatabase()
